@@ -11,7 +11,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function PreviewModal({ assets, startIndex = 0, onClose }: Props) {
+export function PreviewModal({ assets = [], startIndex = 0, onClose }: Props) {
   const [idx, setIdx] = useState(startIndex);
   useEffect(() => setIdx(startIndex), [startIndex, assets]);
 
