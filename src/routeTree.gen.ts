@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VaultRouteImport } from './routes/vault'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VaultFavoritesRouteImport } from './routes/vault.favorites'
 import { Route as AdminLetmeuploadRouteImport } from './routes/admin.letmeupload'
 
 const VaultRoute = VaultRouteImport.update({
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VaultFavoritesRoute = VaultFavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => VaultRoute,
+} as any)
 const AdminLetmeuploadRoute = AdminLetmeuploadRouteImport.update({
   id: '/admin/letmeupload',
   path: '/admin/letmeupload',
@@ -31,31 +37,34 @@ const AdminLetmeuploadRoute = AdminLetmeuploadRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/vault': typeof VaultRoute
+  '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
+  '/vault/favorites': typeof VaultFavoritesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/vault': typeof VaultRoute
+  '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
+  '/vault/favorites': typeof VaultFavoritesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/vault': typeof VaultRoute
+  '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
+  '/vault/favorites': typeof VaultFavoritesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/vault' | '/admin/letmeupload'
+  fullPaths: '/' | '/vault' | '/admin/letmeupload' | '/vault/favorites'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/vault' | '/admin/letmeupload'
-  id: '__root__' | '/' | '/vault' | '/admin/letmeupload'
+  to: '/' | '/vault' | '/admin/letmeupload' | '/vault/favorites'
+  id: '__root__' | '/' | '/vault' | '/admin/letmeupload' | '/vault/favorites'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  VaultRoute: typeof VaultRoute
+  VaultRoute: typeof VaultRouteWithChildren
   AdminLetmeuploadRoute: typeof AdminLetmeuploadRoute
 }
 
@@ -75,6 +84,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vault/favorites': {
+      id: '/vault/favorites'
+      path: '/favorites'
+      fullPath: '/vault/favorites'
+      preLoaderRoute: typeof VaultFavoritesRouteImport
+      parentRoute: typeof VaultRoute
+    }
     '/admin/letmeupload': {
       id: '/admin/letmeupload'
       path: '/admin/letmeupload'
@@ -85,9 +101,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface VaultRouteChildren {
+  VaultFavoritesRoute: typeof VaultFavoritesRoute
+}
+
+const VaultRouteChildren: VaultRouteChildren = {
+  VaultFavoritesRoute: VaultFavoritesRoute,
+}
+
+const VaultRouteWithChildren = VaultRoute._addFileChildren(VaultRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  VaultRoute: VaultRoute,
+  VaultRoute: VaultRouteWithChildren,
   AdminLetmeuploadRoute: AdminLetmeuploadRoute,
 }
 export const routeTree = rootRouteImport

@@ -65,7 +65,7 @@ export function HomepageBuilder({ onClose }: Props) {
         const rows = blocks.map((b, i) => ({
           block_type: b.block_type,
           position: i,
-          data: b.data,
+          data: b.data as never,
         }));
         const { error } = await supabase.from("homepage_blocks").insert(rows);
         if (error) throw error;
