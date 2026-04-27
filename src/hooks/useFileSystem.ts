@@ -66,9 +66,9 @@ export async function resolvePath(path: string): Promise<string | null> {
   let parentId: string | null = null;
   for (const name of parts) {
     const q = supabase.from("folders").select("id,name,parent_id").eq("name", name);
-    const { data } = parentId === null ? await q.is("parent_id", null) : await q.eq("parent_id", parentId);
-    const rows = (data as Folder[] | null) ?? [];
-    if (rows.length === 0) return parentId; // best-effort: stay at the deepest matched
+    const res = parentId === null ? await q.is("parent_id", null) : await q.eq("parent_id", parentId);
+    const rows: Folder[] = (res.data as Folder[] | null) ?? [];
+    if (rows.length === 0) return parentId;
     parentId = rows[0].id;
   }
   return parentId;
