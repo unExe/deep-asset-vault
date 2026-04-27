@@ -51,11 +51,7 @@ export async function getBreadcrumbs(folderId: string | null): Promise<Folder[]>
   const trail: Folder[] = [];
   let cursor: string | null = folderId;
   while (cursor) {
-    const res = await supabase
-      .from("folders")
-      .select("*")
-      .eq("id", cursor)
-      .maybeSingle();
+    const res = await supabase.from("folders").select("*").eq("id", cursor).maybeSingle();
     const row = res.data as Folder | null;
     if (!row) break;
     trail.unshift(row);
@@ -64,7 +60,36 @@ export async function getBreadcrumbs(folderId: string | null): Promise<Folder[]>
   return trail;
 }
 
+/** Resolve a "/A/B/C" style path to a folder id (or null for root). Returns null if not found OR if it's root. */
+export async function resolvePath(path: string): Promise<string | null> {
+  const parts = path.split("/").map((p) => p.trim()).filter(Boolean);
+  let parentId: string | null = null;
+  for (const name of parts) {
+    const q = supabase.from("folders").select("id,name,parent_id").eq("name", name);
+    const res = parentId === null ? await q.is("parent_id", null) : await q.eq("parent_id", parentId);
+    const rows: Folder[] = (res.data as Folder[] | null) ?? [];
+    if (rows.length === 0) return parentId;
+    parentId = rows[0].id;
+  }
+  return parentId;
+}
+
 export function getPublicUrl(storagePath: string): string {
   const { data } = supabase.storage.from("assets").getPublicUrl(storagePath);
   return data.publicUrl;
+}
+
+/** Find or create a folder named `name` under parentId. */
+export async function ensureFolder(name: string, parentId: string | null): Promise<string> {
+  const q = supabase.from("folders").select("id").eq("name", name);
+  const { data } = parentId === null ? await q.is("parent_id", null) : await q.eq("parent_id", parentId);
+  const existing = (data as { id: string }[] | null) ?? [];
+  if (existing.length) return existing[0].id;
+  const { data: ins, error } = await supabase
+    .from("folders")
+    .insert({ name, parent_id: parentId })
+    .select("id")
+    .single();
+  if (error || !ins) throw error ?? new Error("create folder failed");
+  return (ins as { id: string }).id;
 }
