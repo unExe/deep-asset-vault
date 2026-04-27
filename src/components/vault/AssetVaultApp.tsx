@@ -8,8 +8,13 @@ import { UploadProgress } from "@/components/vault/UploadProgress";
 import { ContextMenu, type MenuItem } from "@/components/vault/ContextMenu";
 import { ThemeToggle } from "@/components/vault/ThemeToggle";
 import { AssetInfoDialog, FolderInfoDialog } from "@/components/vault/InfoDialog";
+import { VaultSidebar, togglePinFolder } from "@/components/vault/VaultSidebar";
+import { CommentSection } from "@/components/vault/CommentSection";
+import { FolderInfoBanner } from "@/components/vault/FolderInfoEditor";
+import { HomepageBuilder } from "@/components/vault/HomepageBuilder";
 import { useFileSystem, type Asset } from "@/hooks/useFileSystem";
 import { useVaultStore } from "@/lib/vault-store";
+import { Favorites } from "@/lib/favorites";
 import { supabase } from "@/integrations/supabase/client";
 import {
   collectAssetsRecursive,
@@ -28,6 +33,8 @@ import {
   FolderPlus,
   Info,
   ArrowsOut,
+  Star,
+  PushPin,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
@@ -53,6 +60,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [renameValue, setRenameValue] = useState("");
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const [info, setInfo] = useState<InfoState | null>(null);
+  const [showBuilder, setShowBuilder] = useState(false);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
@@ -215,6 +223,28 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     showInfoFor({ id, kind });
   };
 
+  const handleFavoriteSelected = () => {
+    if (selected.size !== 1) return;
+    const [id, kind] = [...selected.entries()][0];
+    const item = kind === "folder" ? folders.find((f) => f.id === id) : assets.find((a) => a.id === id);
+    if (!item) return;
+    const wasFav = Favorites.has(id);
+    Favorites.toggle({ id, kind, name: item.name });
+    toast.success(wasFav ? "Removed from favorites" : "Added to favorites");
+  };
+
+  const handleAddToSidebarSelected = async () => {
+    const folderTargets = [...selected.entries()].filter(([, k]) => k === "folder").map(([id]) => id);
+    if (folderTargets.length === 0) return;
+    for (const id of folderTargets) await togglePinFolder(id);
+    toast.success("Sidebar updated");
+  };
+
+  const canAddToSidebarSel = useMemo(
+    () => [...selected.entries()].some(([, k]) => k === "folder"),
+    [selected],
+  );
+
   // === Context menu handlers ===
   const openItemContext = (e: React.MouseEvent, target: { id: string; kind: "folder" | "asset" }) => {
     e.preventDefault();
@@ -269,8 +299,10 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     const onlyAsset = selectedAssets.length === sel && sel >= 1;
     if (hasTarget) {
       const target = ctx!.target!;
+      const isFolderTarget = target.kind === "folder";
+      const isFav = Favorites.has(target.id);
       return [
-        ...(target.kind === "folder"
+        ...(isFolderTarget
           ? [{ label: "Open", icon: <FolderPlus size={14} />, onClick: () => navigate(target.id) }]
           : [{ label: "Open", icon: <ArrowsOut size={14} />, onClick: () => {
               const a = assets.find((x) => x.id === target.id);
@@ -281,6 +313,20 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
           : [{ label: "Bulk preview", icon: <Eye size={14} />, onClick: handlePreview }]),
         { label: sel > 1 ? `Download (${sel})` : "Download", icon: <DownloadSimple size={14} />, onClick: handleDownload },
         { separator: true } as MenuItem,
+        ...(sel === 1
+          ? [{
+              label: isFav ? "Remove favorite" : "Add to favorites",
+              icon: <Star size={14} weight={isFav ? "fill" : "regular"} />,
+              onClick: handleFavoriteSelected,
+            } as MenuItem]
+          : []),
+        ...(isFolderTarget && isEditorMode
+          ? [{
+              label: "Add to sidebar",
+              icon: <PushPin size={14} />,
+              onClick: handleAddToSidebarSelected,
+            } as MenuItem]
+          : []),
         { label: "Copy", icon: <Copy size={14} />, onClick: handleCopy },
         ...(isEditorMode
           ? ([
@@ -333,8 +379,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     }
     const f = folders.find((x) => x.id === info.id);
     if (!f) return null;
-    // Quick recursive count via async wouldn't render; show direct child counts via a small inline async loader.
-    return <FolderInfo folderId={f.id} folderName={f.name} onClose={() => setInfo(null)} />;
+    return <FolderInfo folderId={f.id} folderName={f.name} createdAt={f.created_at} onClose={() => setInfo(null)} />;
   };
 
   const grid = (
@@ -356,54 +401,73 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
   return (
     <div className="min-h-screen bg-vault-bg text-vault-fg">
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-vault-bg/85 border-b border-vault-hairline">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-2 h-2 rounded-full bg-vault-fg" />
-            <span className="font-medium tracking-tight text-sm hidden sm:inline">vault.unExe</span>
+      <VaultSidebar
+        isEditorMode={isEditorMode}
+        currentFolderId={folderId}
+        onNavigateFolder={(id) => {
+          // Navigate clearing history forward
+          clear();
+          setFolderId(id);
+          setHistory((h) => [...h.slice(0, histIdx + 1), id]);
+          setHistIdx((i) => i + 1);
+        }}
+        onOpenBuilder={() => setShowBuilder(true)}
+      />
+
+      <div className="md:pl-64">
+        <header className="sticky top-0 z-30 backdrop-blur-md bg-vault-bg/85 border-b border-vault-hairline">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 shrink-0 md:hidden">
+              <div className="w-2 h-2 rounded-full bg-vault-fg" />
+              <span className="font-medium tracking-tight text-sm hidden sm:inline">vault.unExe</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <PathBar
+                folderId={folderId}
+                onNavigate={navigate}
+                onBack={goBack}
+                onForward={goForward}
+                canBack={histIdx > 0}
+                canForward={histIdx < history.length - 1}
+                onRefresh={() => void refresh()}
+                search={search}
+                onSearchChange={setSearch}
+              />
+            </div>
+            <ThemeToggle />
+            {isEditorMode && (
+              <span className="shrink-0 hidden sm:inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-vault-hairline text-vault-fg-muted">
+                Editor
+              </span>
+            )}
           </div>
-          <div className="flex-1 min-w-0">
-            <PathBar
-              folderId={folderId}
-              onNavigate={navigate}
-              onBack={goBack}
-              onForward={goForward}
-              canBack={histIdx > 0}
-              canForward={histIdx < history.length - 1}
-              onRefresh={() => void refresh()}
-              search={search}
-              onSearchChange={setSearch}
+          {/* Mobile search */}
+          <div className="sm:hidden px-3 pb-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search this folder…"
+              className="w-full h-8 px-3 bg-vault-overlay border border-vault-hairline rounded-md text-xs text-vault-fg placeholder:text-vault-fg-muted outline-none"
             />
           </div>
-          <ThemeToggle />
-          {isEditorMode && (
-            <span className="shrink-0 hidden sm:inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-vault-hairline text-vault-fg-muted">
-              Editor
-            </span>
-          )}
-        </div>
-        {/* Mobile search */}
-        <div className="sm:hidden px-3 pb-2">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search this folder…"
-            className="w-full h-8 px-3 bg-vault-overlay border border-vault-hairline rounded-md text-xs text-vault-fg placeholder:text-vault-fg-muted outline-none"
-          />
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
-        {loading ? (
-          <div className="text-vault-fg-muted text-sm py-32 text-center">Loading…</div>
-        ) : isEditorMode ? (
-          <UploadDropZone currentFolderId={folderId} onUploaded={refresh}>
-            {grid}
-          </UploadDropZone>
-        ) : (
-          grid
-        )}
-      </main>
+        <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
+          <FolderInfoBanner folderId={folderId} isEditorMode={isEditorMode} />
+
+          {loading ? (
+            <div className="text-vault-fg-muted text-sm py-32 text-center">Loading…</div>
+          ) : isEditorMode ? (
+            <UploadDropZone currentFolderId={folderId} onUploaded={refresh}>
+              {grid}
+            </UploadDropZone>
+          ) : (
+            grid
+          )}
+
+          <CommentSection folderId={folderId} isEditorMode={isEditorMode} />
+        </main>
+      </div>
 
       <ActionBar
         assets={assets}
@@ -416,6 +480,9 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
         onCut={handleCut}
         onRename={() => selected.size === 1 && startRename([...selected.keys()][0])}
         onInfo={showInfoForSelected}
+        onFavorite={handleFavoriteSelected}
+        onAddToSidebar={handleAddToSidebarSelected}
+        canAddToSidebar={canAddToSidebarSel}
       />
 
       {previewQueue && (
@@ -432,13 +499,17 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
       {renderInfoDialog()}
 
+      {showBuilder && isEditorMode && (
+        <HomepageBuilder onClose={() => setShowBuilder(false)} />
+      )}
+
       <UploadProgress />
     </div>
   );
 }
 
 /** Loads child counts then renders the FolderInfoDialog. */
-function FolderInfo({ folderId, folderName, onClose }: { folderId: string; folderName: string; onClose: () => void }) {
+function FolderInfo({ folderId, folderName, createdAt, onClose }: { folderId: string; folderName: string; createdAt?: string; onClose: () => void }) {
   const [counts, setCounts] = useState<{ folders: number; assets: number } | null>(null);
   useEffect(() => {
     void (async () => {
@@ -453,6 +524,7 @@ function FolderInfo({ folderId, folderName, onClose }: { folderId: string; folde
     <FolderInfoDialog
       folderId={folderId}
       folderName={folderName}
+      createdAt={createdAt}
       childFolders={counts?.folders ?? 0}
       childAssets={counts?.assets ?? 0}
       onClose={onClose}
