@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_events: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          kind: string
+          visitor_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          visitor_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       assets: {
         Row: {
           created_at: string
@@ -24,6 +48,7 @@ export type Database = {
           name: string
           size_bytes: number | null
           storage_path: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -34,6 +59,7 @@ export type Database = {
           name: string
           size_bytes?: number | null
           storage_path: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -44,6 +70,7 @@ export type Database = {
           name?: string
           size_bytes?: number | null
           storage_path?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -55,24 +82,57 @@ export type Database = {
           },
         ]
       }
+      folder_comments: {
+        Row: {
+          body: string
+          created_at: string
+          email: string | null
+          folder_id: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          email?: string | null
+          folder_id?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          email?: string | null
+          folder_id?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       folders: {
         Row: {
           created_at: string
           id: string
+          info_md: string
           name: string
           parent_id: string | null
+          sidebar_pinned: boolean
         }
         Insert: {
           created_at?: string
           id?: string
+          info_md?: string
           name: string
           parent_id?: string | null
+          sidebar_pinned?: boolean
         }
         Update: {
           created_at?: string
           id?: string
+          info_md?: string
           name?: string
           parent_id?: string | null
+          sidebar_pinned?: boolean
         }
         Relationships: [
           {
@@ -83,6 +143,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      homepage_blocks: {
+        Row: {
+          block_type: string
+          created_at: string
+          data: Json
+          id: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          block_type: string
+          created_at?: string
+          data?: Json
+          id?: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          block_type?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
