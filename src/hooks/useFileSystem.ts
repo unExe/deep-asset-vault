@@ -13,6 +13,7 @@ export interface Asset {
   folder_id: string | null;
   file_type: string | null;
   size_bytes: number | null;
+  is_info?: boolean;
 }
 
 export function useFileSystem(currentFolderId: string | null) {
@@ -23,7 +24,7 @@ export function useFileSystem(currentFolderId: string | null) {
   const refresh = useCallback(async () => {
     setLoading(true);
     const folderQ = supabase.from("folders").select("*").order("name");
-    const assetQ = supabase.from("assets").select("*").order("name");
+    const assetQ = supabase.from("assets").select("*").order("is_info", { ascending: false }).order("name");
 
     const [{ data: f }, { data: a }] = await Promise.all([
       currentFolderId === null

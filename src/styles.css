@@ -67,20 +67,31 @@
   --color-vault-fg-muted: var(--vault-fg-muted);
   --color-vault-folder: var(--vault-folder);
   --color-vault-accent: var(--vault-accent);
+  --color-vault-overlay: var(--vault-overlay);
+  --color-vault-overlay-strong: var(--vault-overlay-strong);
+  --color-vault-hairline: var(--vault-hairline);
+  --color-vault-menu-bg: var(--vault-menu-bg);
+  --color-vault-danger: var(--vault-danger);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.04 0 0);
-  --foreground: oklch(0.95 0 0);
-  --vault-bg: oklch(0.05 0 0);
-  --vault-card: oklch(0.13 0 0);
-  --vault-card-hover: oklch(0.17 0 0);
-  --vault-border: oklch(0.22 0 0);
-  --vault-fg: oklch(0.92 0 0);
-  --vault-fg-muted: oklch(0.6 0 0);
-  --vault-folder: oklch(0.55 0.02 240);
-  --vault-accent: oklch(0.75 0.18 230);
+  /* Light theme (default) */
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.15 0 0);
+  --vault-bg: oklch(0.99 0 0);
+  --vault-card: oklch(0.96 0 0);
+  --vault-card-hover: oklch(0.93 0 0);
+  --vault-border: oklch(0.88 0 0);
+  --vault-fg: oklch(0.15 0 0);
+  --vault-fg-muted: oklch(0.45 0 0);
+  --vault-folder: oklch(0.45 0.05 240);
+  --vault-accent: oklch(0.55 0.2 250);
+  --vault-overlay: oklch(0.15 0 0 / 4%);
+  --vault-overlay-strong: oklch(0.15 0 0 / 8%);
+  --vault-hairline: oklch(0.15 0 0 / 10%);
+  --vault-menu-bg: oklch(1 0 0);
+  --vault-danger: oklch(0.55 0.22 25);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
@@ -114,8 +125,21 @@
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
+  --background: oklch(0.04 0 0);
+  --foreground: oklch(0.95 0 0);
+  --vault-bg: oklch(0.04 0 0);
+  --vault-card: oklch(0.11 0 0);
+  --vault-card-hover: oklch(0.15 0 0);
+  --vault-border: oklch(0.22 0 0);
+  --vault-fg: oklch(0.95 0 0);
+  --vault-fg-muted: oklch(0.6 0 0);
+  --vault-folder: oklch(0.7 0.02 240);
+  --vault-accent: oklch(0.75 0.18 230);
+  --vault-overlay: oklch(1 0 0 / 4%);
+  --vault-overlay-strong: oklch(1 0 0 / 8%);
+  --vault-hairline: oklch(1 0 0 / 10%);
+  --vault-menu-bg: oklch(0.07 0 0);
+  --vault-danger: oklch(0.7 0.2 25);
   --card: oklch(0.208 0.042 265.755);
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);

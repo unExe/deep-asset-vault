@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VaultRouteImport } from './routes/vault'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminLetmeuploadRouteImport } from './routes/admin.letmeupload'
 
+const VaultRoute = VaultRouteImport.update({
+  id: '/vault',
+  path: '/vault',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -25,32 +31,43 @@ const AdminLetmeuploadRoute = AdminLetmeuploadRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/vault': typeof VaultRoute
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/vault': typeof VaultRoute
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/vault': typeof VaultRoute
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin/letmeupload'
+  fullPaths: '/' | '/vault' | '/admin/letmeupload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin/letmeupload'
-  id: '__root__' | '/' | '/admin/letmeupload'
+  to: '/' | '/vault' | '/admin/letmeupload'
+  id: '__root__' | '/' | '/vault' | '/admin/letmeupload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  VaultRoute: typeof VaultRoute
   AdminLetmeuploadRoute: typeof AdminLetmeuploadRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vault': {
+      id: '/vault'
+      path: '/vault'
+      fullPath: '/vault'
+      preLoaderRoute: typeof VaultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  VaultRoute: VaultRoute,
   AdminLetmeuploadRoute: AdminLetmeuploadRoute,
 }
 export const routeTree = rootRouteImport
