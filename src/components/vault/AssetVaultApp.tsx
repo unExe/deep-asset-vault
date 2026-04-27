@@ -6,7 +6,6 @@ import { PreviewModal } from "@/components/vault/PreviewModal";
 import { UploadDropZone } from "@/components/vault/UploadDropZone";
 import { useFileSystem, type Asset } from "@/hooks/useFileSystem";
 import { useVaultStore } from "@/lib/vault-store";
-import { LockKey, LockKeyOpen, Vault } from "@phosphor-icons/react";
 
 export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [folderId, setFolderId] = useState<string | null>(null);
@@ -19,17 +18,15 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     setFolderId(id);
   };
 
-  const grid = (
-    <FolderGrid folders={folders} assets={assets} onOpenFolder={navigate} />
-  );
+  const grid = <FolderGrid folders={folders} assets={assets} onOpenFolder={navigate} />;
 
   return (
-    <div className="min-h-screen bg-vault-bg text-vault-fg">
-      <header className="sticky top-0 z-30 backdrop-blur-xl bg-vault-bg/80 border-b border-vault-border">
+    <div className="min-h-screen bg-black text-white">
+      <header className="sticky top-0 z-30 backdrop-blur-md bg-black/80 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-4">
-          <div className="flex items-center gap-2 text-vault-fg shrink-0">
-            <Vault size={22} weight="fill" className="text-vault-accent" />
-            <span className="font-semibold tracking-tight">AssetVault</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-2 h-2 rounded-full bg-white" />
+            <span className="font-medium tracking-tight text-sm">AssetVault</span>
           </div>
           <div className="flex-1 min-w-0">
             <Breadcrumbs
@@ -38,24 +35,17 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
               selectedCount={selected.size}
             />
           </div>
-          <div className="shrink-0 flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-vault-border text-vault-fg-muted">
-            {isEditorMode ? (
-              <>
-                <LockKeyOpen size={12} weight="fill" className="text-vault-accent" />
-                <span className="text-vault-accent">Editor</span>
-              </>
-            ) : (
-              <>
-                <LockKey size={12} weight="fill" /> Read-only
-              </>
-            )}
-          </div>
+          {isEditorMode && (
+            <span className="shrink-0 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-white/20 text-white/70">
+              Editor
+            </span>
+          )}
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6">
         {loading ? (
-          <div className="text-vault-fg-muted text-sm py-32 text-center">Loading…</div>
+          <div className="text-white/40 text-sm py-32 text-center">Loading…</div>
         ) : isEditorMode ? (
           <UploadDropZone currentFolderId={folderId} onUploaded={refresh}>
             {grid}
