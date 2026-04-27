@@ -20,6 +20,7 @@ export type Database = {
           file_type: string | null
           folder_id: string | null
           id: string
+          is_info: boolean
           name: string
           size_bytes: number | null
           storage_path: string
@@ -29,6 +30,7 @@ export type Database = {
           file_type?: string | null
           folder_id?: string | null
           id?: string
+          is_info?: boolean
           name: string
           size_bytes?: number | null
           storage_path: string
@@ -38,6 +40,7 @@ export type Database = {
           file_type?: string | null
           folder_id?: string | null
           id?: string
+          is_info?: boolean
           name?: string
           size_bytes?: number | null
           storage_path?: string
