@@ -67,6 +67,11 @@
   --color-vault-fg-muted: var(--vault-fg-muted);
   --color-vault-folder: var(--vault-folder);
   --color-vault-accent: var(--vault-accent);
+  --color-vault-overlay: var(--vault-overlay);
+  --color-vault-overlay-strong: var(--vault-overlay-strong);
+  --color-vault-hairline: var(--vault-hairline);
+  --color-vault-menu-bg: var(--vault-menu-bg);
+  --color-vault-danger: var(--vault-danger);
 }
 
 :root {
