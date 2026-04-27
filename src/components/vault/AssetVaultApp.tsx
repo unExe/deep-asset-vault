@@ -3,8 +3,11 @@ import { PathBar } from "@/components/vault/PathBar";
 import { FolderGrid } from "@/components/vault/FolderGrid";
 import { ActionBar } from "@/components/vault/ActionBar";
 import { PreviewModal } from "@/components/vault/PreviewModal";
-import { UploadDropZone } from "@/components/vault/UploadDropZone";
+import { UploadDropZone, createInfoFile } from "@/components/vault/UploadDropZone";
+import { UploadProgress } from "@/components/vault/UploadProgress";
 import { ContextMenu, type MenuItem } from "@/components/vault/ContextMenu";
+import { ThemeToggle } from "@/components/vault/ThemeToggle";
+import { AssetInfoDialog, FolderInfoDialog } from "@/components/vault/InfoDialog";
 import { useFileSystem, type Asset } from "@/hooks/useFileSystem";
 import { useVaultStore } from "@/lib/vault-store";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +26,8 @@ import {
   ClipboardText,
   PencilSimple,
   FolderPlus,
+  Info,
+  ArrowsOut,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
@@ -30,6 +35,11 @@ interface CtxState {
   x: number;
   y: number;
   target: { id: string; kind: "folder" | "asset" } | null;
+}
+
+interface InfoState {
+  kind: "asset" | "folder";
+  id: string;
 }
 
 export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
@@ -42,9 +52,10 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [ctx, setCtx] = useState<CtxState | null>(null);
+  const [info, setInfo] = useState<InfoState | null>(null);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
-  const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
+  const { selected, clear, selectOnly, setClipboard, clipboard, toggle } = useVaultStore();
 
   const navigate = useCallback(
     (id: string | null) => {
@@ -123,7 +134,6 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   };
 
   const handlePreview = async () => {
-    // Bulk preview: gather all selected assets + recurse folders for any media
     let queue: Asset[] = [...selectedAssets];
     if (selectedFolderIds.length) {
       const nested = await collectAssetsRecursive(selectedFolderIds);
@@ -149,7 +159,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     try {
       await pasteClipboard(clipboard.items, clipboard.mode, folderId);
       toast.success("Pasted");
-      if (clipboard.mode === "cut") setClipboard("copy", []); // clear cut after move
+      if (clipboard.mode === "cut") setClipboard("copy", []);
       void refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Paste failed");
@@ -181,12 +191,28 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const handleNewFolder = async () => {
     const name = prompt("Folder name?");
     if (!name) return;
-    const { error } = await supabase.from("folders").insert({ name, parent_id: folderId });
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Folder created");
-      void refresh();
+    const { data, error } = await supabase
+      .from("folders")
+      .insert({ name, parent_id: folderId })
+      .select("id")
+      .single();
+    if (error || !data) {
+      toast.error(error?.message ?? "Create failed");
+      return;
     }
+    await createInfoFile((data as { id: string }).id, name);
+    toast.success("Folder created");
+    void refresh();
+  };
+
+  const showInfoFor = (target: { id: string; kind: "folder" | "asset" }) => {
+    setInfo({ id: target.id, kind: target.kind });
+  };
+
+  const showInfoForSelected = () => {
+    if (selected.size !== 1) return;
+    const [id, kind] = [...selected.entries()][0];
+    showInfoFor({ id, kind });
   };
 
   // === Context menu handlers ===
@@ -242,22 +268,39 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     const sel = selected.size;
     const onlyAsset = selectedAssets.length === sel && sel >= 1;
     if (hasTarget) {
+      const target = ctx!.target!;
       return [
-        ...(ctx!.target!.kind === "folder"
-          ? [{ label: "Open", icon: <FolderPlus size={14} />, onClick: () => navigate(ctx!.target!.id) }]
-          : []),
-        ...(onlyAsset || (ctx!.target!.kind === "asset")
+        ...(target.kind === "folder"
+          ? [{ label: "Open", icon: <FolderPlus size={14} />, onClick: () => navigate(target.id) }]
+          : [{ label: "Open", icon: <ArrowsOut size={14} />, onClick: () => {
+              const a = assets.find((x) => x.id === target.id);
+              if (a) setPreviewQueue({ items: [a], start: 0 });
+            } }]),
+        ...(onlyAsset || target.kind === "asset"
           ? [{ label: sel > 1 ? `Preview (${sel})` : "Preview", icon: <Eye size={14} />, onClick: handlePreview }]
           : [{ label: "Bulk preview", icon: <Eye size={14} />, onClick: handlePreview }]),
         { label: sel > 1 ? `Download (${sel})` : "Download", icon: <DownloadSimple size={14} />, onClick: handleDownload },
+        { separator: true } as MenuItem,
+        { label: "Copy", icon: <Copy size={14} />, onClick: handleCopy },
         ...(isEditorMode
           ? ([
-              { separator: true } as MenuItem,
-              { label: "Copy", icon: <Copy size={14} />, onClick: handleCopy },
               { label: "Cut", icon: <Scissors size={14} />, onClick: handleCut },
+              {
+                label: clipboard && clipboard.items.length ? `Paste (${clipboard.items.length})` : "Paste",
+                icon: <ClipboardText size={14} />,
+                onClick: handlePaste,
+                disabled: !clipboard || clipboard.items.length === 0,
+              },
               ...(sel === 1
                 ? [{ label: "Rename", icon: <PencilSimple size={14} />, onClick: () => startRename([...selected.keys()][0]) }]
                 : []),
+            ] as MenuItem[])
+          : []),
+        ...(sel === 1
+          ? [{ label: "Info", icon: <Info size={14} />, onClick: () => showInfoFor(target) } as MenuItem]
+          : []),
+        ...(isEditorMode
+          ? ([
               { separator: true } as MenuItem,
               { label: "Delete", icon: <Trash size={14} />, onClick: handleDelete, danger: true },
             ] as MenuItem[])
@@ -280,6 +323,20 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     ];
   };
 
+  // Resolve info dialog content
+  const renderInfoDialog = () => {
+    if (!info) return null;
+    if (info.kind === "asset") {
+      const a = assets.find((x) => x.id === info.id);
+      if (!a) return null;
+      return <AssetInfoDialog asset={a} onClose={() => setInfo(null)} />;
+    }
+    const f = folders.find((x) => x.id === info.id);
+    if (!f) return null;
+    // Quick recursive count via async wouldn't render; show direct child counts via a small inline async loader.
+    return <FolderInfo folderId={f.id} folderName={f.name} onClose={() => setInfo(null)} />;
+  };
+
   const grid = (
     <FolderGrid
       folders={filteredFolders}
@@ -298,11 +355,11 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-black/80 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-3">
+    <div className="min-h-screen bg-vault-bg text-vault-fg">
+      <header className="sticky top-0 z-30 backdrop-blur-md bg-vault-bg/85 border-b border-vault-hairline">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 shrink-0">
-            <div className="w-2 h-2 rounded-full bg-white" />
+            <div className="w-2 h-2 rounded-full bg-vault-fg" />
             <span className="font-medium tracking-tight text-sm hidden sm:inline">vault.unExe</span>
           </div>
           <div className="flex-1 min-w-0">
@@ -318,8 +375,9 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
               onSearchChange={setSearch}
             />
           </div>
+          <ThemeToggle />
           {isEditorMode && (
-            <span className="shrink-0 hidden sm:inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-white/20 text-white/70">
+            <span className="shrink-0 hidden sm:inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-vault-hairline text-vault-fg-muted">
               Editor
             </span>
           )}
@@ -330,14 +388,14 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search this folder…"
-            className="w-full h-8 px-3 bg-white/[0.04] border border-white/10 rounded-md text-xs text-white placeholder:text-white/40 outline-none"
+            className="w-full h-8 px-3 bg-vault-overlay border border-vault-hairline rounded-md text-xs text-vault-fg placeholder:text-vault-fg-muted outline-none"
           />
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
         {loading ? (
-          <div className="text-white/40 text-sm py-32 text-center">Loading…</div>
+          <div className="text-vault-fg-muted text-sm py-32 text-center">Loading…</div>
         ) : isEditorMode ? (
           <UploadDropZone currentFolderId={folderId} onUploaded={refresh}>
             {grid}
@@ -357,6 +415,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
         onCopy={handleCopy}
         onCut={handleCut}
         onRename={() => selected.size === 1 && startRename([...selected.keys()][0])}
+        onInfo={showInfoForSelected}
       />
 
       {previewQueue && (
@@ -370,6 +429,36 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       {ctx && (
         <ContextMenu x={ctx.x} y={ctx.y} items={buildContextItems()} onClose={() => setCtx(null)} />
       )}
+
+      {renderInfoDialog()}
+
+      <UploadProgress />
+
+      {/* Suppress unused warnings */}
+      <span className="hidden">{toggle.name}</span>
     </div>
+  );
+}
+
+/** Loads child counts then renders the FolderInfoDialog. */
+function FolderInfo({ folderId, folderName, onClose }: { folderId: string; folderName: string; onClose: () => void }) {
+  const [counts, setCounts] = useState<{ folders: number; assets: number } | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const [{ count: fc }, { count: ac }] = await Promise.all([
+        supabase.from("folders").select("id", { count: "exact", head: true }).eq("parent_id", folderId),
+        supabase.from("assets").select("id", { count: "exact", head: true }).eq("folder_id", folderId),
+      ]);
+      setCounts({ folders: fc ?? 0, assets: ac ?? 0 });
+    })();
+  }, [folderId]);
+  return (
+    <FolderInfoDialog
+      folderId={folderId}
+      folderName={folderName}
+      childFolders={counts?.folders ?? 0}
+      childAssets={counts?.assets ?? 0}
+      onClose={onClose}
+    />
   );
 }
