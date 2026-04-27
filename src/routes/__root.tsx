@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -30,14 +31,13 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "vault.unExe" },
-      { name: "description", content: "vault.unExe — minimal asset vault" },
-      { name: "author", content: "vault.unExe" },
-      { property: "og:title", content: "vault.unExe" },
-      { property: "og:description", content: "Minimal asset vault" },
+      { title: "unExe — creator hub & vault" },
+      { name: "description", content: "unExe — videos, drops, and the editor vault." },
+      { name: "author", content: "unExe" },
+      { property: "og:title", content: "unExe" },
+      { property: "og:description", content: "Videos, drops, and the editor vault." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@vault" },
     ],
     links: [
       {
@@ -53,7 +53,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
@@ -67,9 +67,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <>
+    <ThemeProvider>
       <Outlet />
       <Toaster theme="dark" />
-    </>
+    </ThemeProvider>
   );
 }
