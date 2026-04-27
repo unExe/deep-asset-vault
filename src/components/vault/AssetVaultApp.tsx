@@ -55,7 +55,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [info, setInfo] = useState<InfoState | null>(null);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
-  const { selected, clear, selectOnly, setClipboard, clipboard, toggle } = useVaultStore();
+  const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
 
   const navigate = useCallback(
     (id: string | null) => {
