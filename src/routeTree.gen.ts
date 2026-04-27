@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminLetmeuploadRouteImport } from './routes/admin.letmeupload'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLetmeuploadRoute = AdminLetmeuploadRouteImport.update({
+  id: '/admin/letmeupload',
+  path: '/admin/letmeupload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin/letmeupload': typeof AdminLetmeuploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/letmeupload': typeof AdminLetmeuploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin/letmeupload': typeof AdminLetmeuploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/admin/letmeupload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/admin/letmeupload'
+  id: '__root__' | '/' | '/admin/letmeupload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminLetmeuploadRoute: typeof AdminLetmeuploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,21 +58,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/letmeupload': {
+      id: '/admin/letmeupload'
+      path: '/admin/letmeupload'
+      fullPath: '/admin/letmeupload'
+      preLoaderRoute: typeof AdminLetmeuploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminLetmeuploadRoute: AdminLetmeuploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
