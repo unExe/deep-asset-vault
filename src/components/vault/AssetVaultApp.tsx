@@ -433,9 +433,6 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       {renderInfoDialog()}
 
       <UploadProgress />
-
-      {/* Suppress unused warnings */}
-      <span className="hidden">{toggle.name}</span>
     </div>
   );
 }
