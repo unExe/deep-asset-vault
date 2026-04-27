@@ -27,6 +27,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme() {
   const ctx = useContext(ThemeCtx);
-  if (!ctx) throw new Error("useTheme must be used inside ThemeProvider");
+  if (!ctx) {
+    // Fallback for SSR or out-of-provider usage — no-op setters, default dark.
+    return { theme: "dark" as Theme, toggle: () => {}, set: (_: Theme) => {} };
+  }
   return ctx;
 }
