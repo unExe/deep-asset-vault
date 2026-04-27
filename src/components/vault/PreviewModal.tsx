@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getPublicUrl, type Asset } from "@/hooks/useFileSystem";
 import { AssetInfoDialog } from "./InfoDialog";
 import { triggerDownload } from "@/lib/vault-ops";
+import { recordEvent } from "@/lib/visitor";
 
 interface Props {
   assets: Asset[];
@@ -15,6 +16,12 @@ export function PreviewModal({ assets = [], startIndex = 0, onClose }: Props) {
   const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => setIdx(startIndex), [startIndex, assets]);
+
+  // Record a view event whenever the displayed asset changes
+  useEffect(() => {
+    const a = assets[idx];
+    if (a) void recordEvent(a.id, "view");
+  }, [idx, assets]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -40,6 +47,7 @@ export function PreviewModal({ assets = [], startIndex = 0, onClose }: Props) {
   const handleDownload = async () => {
     const blob = await fetch(url).then((r) => r.blob());
     triggerDownload(blob, asset.name);
+    void recordEvent(asset.id, "download");
   };
 
   return (

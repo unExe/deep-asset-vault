@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFolder, getPublicUrl, type Asset, type Folder } from "@/hooks/useFileSystem";
+import { recordEvent } from "@/lib/visitor";
 import JSZip from "jszip";
 
 interface FolderRow {
@@ -62,6 +63,7 @@ export async function downloadSelection(
     const a = selectedAssets[0];
     const blob = await fetch(getPublicUrl(a.storage_path)).then((r) => r.blob());
     triggerDownload(blob, a.name);
+    void recordEvent(a.id, "download");
     return;
   }
   const zip = new JSZip();
@@ -69,6 +71,7 @@ export async function downloadSelection(
     selectedAssets.map(async (a) => {
       const blob = await fetch(getPublicUrl(a.storage_path)).then((r) => r.blob());
       zip.file(a.name, blob);
+      void recordEvent(a.id, "download");
     }),
   );
   for (const fid of selectedFolderIds) {

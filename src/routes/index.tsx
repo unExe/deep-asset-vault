@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   YoutubeLogo,
   TelegramLogo,
@@ -16,6 +17,8 @@ import {
 } from "@phosphor-icons/react";
 import { ThemeToggle } from "@/components/vault/ThemeToggle";
 import heroPattern from "@/assets/hero-pattern.png";
+import { loadBlocks, type BlockRow } from "@/lib/homepage-blocks";
+import { HomepageRenderer } from "@/components/vault/HomepageRenderer";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,6 +44,8 @@ const YT_URL = "https://youtube.com/@unexecutable?si=U0GY6Jh7rd_CcrC4";
 const TG_URL = "https://t.me/+MMr5_awFb4BkN2E9";
 
 function HomePage() {
+  const [blocks, setBlocks] = useState<BlockRow[] | null>(null);
+  useEffect(() => { void loadBlocks().then(setBlocks); }, []);
   return (
     <div className="min-h-screen bg-vault-bg text-vault-fg">
       {/* Top bar */}

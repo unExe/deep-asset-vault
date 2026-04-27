@@ -1,4 +1,4 @@
-import { Eye, DownloadSimple, Trash, X, Copy, Scissors, PencilSimple, Info } from "@phosphor-icons/react";
+import { Eye, DownloadSimple, Trash, X, Copy, Scissors, PencilSimple, Info, Star, PushPin } from "@phosphor-icons/react";
 import { useVaultStore } from "@/lib/vault-store";
 import { type Asset } from "@/hooks/useFileSystem";
 
@@ -13,6 +13,9 @@ interface Props {
   onCut: () => void;
   onRename: () => void;
   onInfo: () => void;
+  onFavorite: () => void;
+  onAddToSidebar: () => void;
+  canAddToSidebar: boolean;
 }
 
 export function ActionBar({
@@ -26,6 +29,9 @@ export function ActionBar({
   onCut,
   onRename,
   onInfo,
+  onFavorite,
+  onAddToSidebar,
+  canAddToSidebar,
 }: Props) {
   const { selected, clear } = useVaultStore();
   if (selected.size === 0) return null;
@@ -35,6 +41,7 @@ export function ActionBar({
   const canPreview = selectedAssets.length >= 1;
   const canRename = totalCount === 1;
   const canInfo = totalCount === 1;
+  const canFav = totalCount === 1;
 
   const btn = "flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-vault-overlay-strong text-sm text-vault-fg transition-colors shrink-0";
 
@@ -50,6 +57,16 @@ export function ActionBar({
       <button onClick={onDownload} disabled={busy} className={`${btn} disabled:opacity-50`}>
         <DownloadSimple size={16} /> <span className="hidden sm:inline">{busy ? "…" : "Download"}</span>
       </button>
+      {canFav && (
+        <button onClick={onFavorite} className={btn}>
+          <Star size={16} /> <span className="hidden sm:inline">Favorite</span>
+        </button>
+      )}
+      {canAddToSidebar && isEditorMode && (
+        <button onClick={onAddToSidebar} className={btn}>
+          <PushPin size={16} /> <span className="hidden sm:inline">Add to sidebar</span>
+        </button>
+      )}
       {canInfo && (
         <button onClick={onInfo} className={btn}>
           <Info size={16} /> <span className="hidden sm:inline">Info</span>

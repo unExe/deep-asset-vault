@@ -1,5 +1,8 @@
 import { X, DownloadSimple, Info } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
 import { type Asset } from "@/hooks/useFileSystem";
+import { supabase } from "@/integrations/supabase/client";
+import { getEventCounts } from "@/lib/visitor";
 
 interface Props {
   asset: Asset;
@@ -12,6 +15,34 @@ function formatBytes(b: number | null) {
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
   if (b < 1024 * 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`;
   return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+function fmtDate(s?: string | null) {
+  if (!s) return "—";
+  try {
+    return new Date(s).toLocaleString();
+  } catch {
+    return s;
+  }
+}
+
+/** Build "/A/B/C" path string from folder id. */
+async function buildPath(folderId: string | null): Promise<string> {
+  if (!folderId) return "/";
+  const trail: string[] = [];
+  let cursor: string | null = folderId;
+  while (cursor) {
+    const { data } = await supabase
+      .from("folders")
+      .select("name,parent_id")
+      .eq("id", cursor)
+      .maybeSingle();
+    const row = data as { name: string; parent_id: string | null } | null;
+    if (!row) break;
+    trail.unshift(row.name);
+    cursor = row.parent_id;
+  }
+  return "/" + trail.join("/");
 }
 
 export function InfoDialog({
@@ -37,7 +68,7 @@ export function InfoDialog({
             <X size={14} />
           </button>
         </div>
-        <dl className="px-4 py-3 space-y-2 text-xs">
+        <dl className="px-4 py-3 space-y-2 text-xs max-h-[70vh] overflow-y-auto">
           {rows.map((r) => (
             <div key={r.label} className="grid grid-cols-[110px_1fr] gap-3 items-start">
               <dt className="text-vault-fg-muted uppercase tracking-wider text-[10px] mt-0.5">{r.label}</dt>
@@ -51,16 +82,28 @@ export function InfoDialog({
 }
 
 export function AssetInfoDialog({ asset, onClose }: Props) {
+  const [path, setPath] = useState<string>("…");
+  const [counts, setCounts] = useState<{ views: number; downloads: number } | null>(null);
+
+  useEffect(() => {
+    void buildPath(asset.folder_id).then((p) => setPath(p + (p.endsWith("/") ? "" : "/") + asset.name));
+    void getEventCounts(asset.id).then(setCounts);
+  }, [asset.folder_id, asset.id, asset.name]);
+
   return (
     <InfoDialog
       title="File info"
       onClose={onClose}
       rows={[
         { label: "Name", value: asset.name },
+        { label: "Date uploaded", value: fmtDate(asset.created_at) },
+        { label: "Date edited", value: fmtDate(asset.updated_at) },
         { label: "Type", value: asset.file_type ?? "—" },
         { label: "Size", value: formatBytes(asset.size_bytes) },
         { label: "ID", value: <span className="font-mono text-[10px]">{asset.id}</span> },
-        { label: "Path", value: <span className="font-mono text-[10px]">{asset.storage_path}</span> },
+        { label: "Path", value: <span className="font-mono text-[10px]">{path}</span> },
+        { label: "People viewed", value: counts ? counts.views : "…" },
+        { label: "People downloaded", value: counts ? counts.downloads : "…" },
       ]}
     />
   );
@@ -71,29 +114,36 @@ export function FolderInfoDialog({
   folderId,
   childFolders,
   childAssets,
+  createdAt,
   onClose,
 }: {
   folderName: string;
   folderId: string;
   childFolders: number;
   childAssets: number;
+  createdAt?: string;
   onClose: () => void;
 }) {
+  const [path, setPath] = useState<string>("…");
+  useEffect(() => {
+    void buildPath(folderId).then(setPath);
+  }, [folderId]);
   return (
     <InfoDialog
       title="Folder info"
       onClose={onClose}
       rows={[
         { label: "Name", value: folderName },
+        { label: "Date created", value: fmtDate(createdAt) },
+        { label: "Type", value: "Folder" },
         { label: "Subfolders", value: childFolders },
         { label: "Files", value: childAssets },
         { label: "ID", value: <span className="font-mono text-[10px]">{folderId}</span> },
+        { label: "Path", value: <span className="font-mono text-[10px]">{path}</span> },
       ]}
     />
   );
 }
 
 export { formatBytes };
-
-// Re-export the icon for the action bar
 export const DownloadInfoIcons = { DownloadSimple, Info };
