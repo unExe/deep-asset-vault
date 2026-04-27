@@ -57,7 +57,7 @@ export function PathBar({
         <button
           onClick={onBack}
           disabled={!canBack}
-          className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30 text-white/80"
+          className="p-1.5 rounded hover:bg-vault-overlay-strong disabled:opacity-30 text-vault-fg"
           aria-label="Back"
         >
           <ArrowLeft size={16} />
@@ -65,7 +65,7 @@ export function PathBar({
         <button
           onClick={onForward}
           disabled={!canForward}
-          className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30 text-white/80"
+          className="p-1.5 rounded hover:bg-vault-overlay-strong disabled:opacity-30 text-vault-fg"
           aria-label="Forward"
         >
           <ArrowRight size={16} />
@@ -73,7 +73,7 @@ export function PathBar({
         <button
           onClick={goUp}
           disabled={trail.length === 0}
-          className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30 text-white/80"
+          className="p-1.5 rounded hover:bg-vault-overlay-strong disabled:opacity-30 text-vault-fg"
           aria-label="Up"
         >
           <ArrowUp size={16} />
@@ -81,7 +81,7 @@ export function PathBar({
       </div>
 
       {/* Path */}
-      <div className="flex-1 min-w-0 h-8 bg-white/[0.04] hover:bg-white/[0.06] border border-white/10 rounded-md flex items-center px-2">
+      <div className="flex-1 min-w-0 h-8 bg-vault-overlay hover:bg-vault-overlay-strong border border-vault-hairline rounded-md flex items-center px-2">
         {editing ? (
           <form onSubmit={submitPath} className="flex-1">
             <input
@@ -90,20 +90,20 @@ export function PathBar({
               onChange={(e) => setPathStr(e.target.value)}
               onBlur={() => setEditing(false)}
               placeholder="/Folder/Subfolder"
-              className="w-full bg-transparent outline-none text-sm text-white"
+              className="w-full bg-transparent outline-none text-sm text-vault-fg"
             />
           </form>
         ) : (
           <div
             onClick={() => setEditing(true)}
-            className="flex items-center gap-0.5 text-sm text-white/70 overflow-x-auto whitespace-nowrap flex-1 cursor-text"
+            className="flex items-center gap-0.5 text-sm text-vault-fg-muted overflow-x-auto whitespace-nowrap flex-1 cursor-text"
           >
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onNavigate(null);
               }}
-              className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-0.5"
+              className="flex items-center gap-1 hover:bg-vault-overlay-strong rounded px-1.5 py-0.5"
             >
               <House size={13} />
               <span className="hidden sm:inline">Home</span>
@@ -116,7 +116,7 @@ export function PathBar({
                     e.stopPropagation();
                     onNavigate(f.id);
                   }}
-                  className="hover:bg-white/10 rounded px-1.5 py-0.5 text-white"
+                  className="hover:bg-vault-overlay-strong rounded px-1.5 py-0.5 text-vault-fg"
                 >
                   {f.name}
                 </button>
@@ -126,21 +126,21 @@ export function PathBar({
         )}
         <button
           onClick={onRefresh}
-          className="p-1 rounded hover:bg-white/10 text-white/60 ml-1"
+          className="p-1 rounded hover:bg-vault-overlay-strong text-vault-fg-muted ml-1"
           aria-label="Refresh"
         >
           <ArrowClockwise size={13} />
         </button>
       </div>
 
-      {/* Search */}
-      <div className="hidden sm:flex items-center gap-1.5 h-8 w-48 lg:w-64 bg-white/[0.04] border border-white/10 rounded-md px-2.5">
-        <MagnifyingGlass size={13} className="text-white/50" />
+      {/* Search (desktop) */}
+      <div className="hidden sm:flex items-center gap-1.5 h-8 w-48 lg:w-64 bg-vault-overlay border border-vault-hairline rounded-md px-2.5">
+        <MagnifyingGlass size={13} className="text-vault-fg-muted" />
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={`Search ${trail.length ? trail[trail.length - 1].name : "Vault"}`}
-          className="flex-1 bg-transparent outline-none text-xs text-white placeholder:text-white/40"
+          className="flex-1 bg-transparent outline-none text-xs text-vault-fg placeholder:text-vault-fg-muted"
         />
       </div>
     </div>
