@@ -1,11 +1,4 @@
-import {
-  FolderSimple,
-  CheckCircle,
-  FileText,
-  FilmSlate,
-  Image as ImageIcon,
-  MusicNote,
-} from "@phosphor-icons/react";
+import { Folder as FolderIcon, FileText, FilmSlate, Image as ImageIcon, MusicNote, Check } from "@phosphor-icons/react";
 import { useVaultStore } from "@/lib/vault-store";
 import { getPublicUrl, type Asset, type Folder } from "@/hooks/useFileSystem";
 
@@ -27,13 +20,29 @@ function isImage(type: string | null) {
   return type?.startsWith("image/") ?? false;
 }
 
+function Checkbox({ checked, onClick }: { checked: boolean; onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={checked ? "Deselect" : "Select"}
+      className={`absolute top-2 left-2 z-10 w-5 h-5 rounded-[4px] flex items-center justify-center transition-all ${
+        checked
+          ? "bg-white border border-white opacity-100"
+          : "bg-black/60 border border-white/30 opacity-0 group-hover:opacity-100"
+      }`}
+    >
+      {checked && <Check size={13} weight="bold" className="text-black" />}
+    </button>
+  );
+}
+
 export function FolderGrid({ folders, assets, onOpenFolder }: Props) {
   const { selected, toggle } = useVaultStore();
 
   if (folders.length === 0 && assets.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-vault-fg-muted">
-        <FolderSimple size={64} weight="duotone" className="opacity-30 mb-4" />
+      <div className="flex flex-col items-center justify-center py-32 text-white/40">
+        <FolderIcon size={56} weight="duotone" className="opacity-30 mb-4" />
         <p className="text-sm">This folder is empty</p>
       </div>
     );
@@ -41,57 +50,63 @@ export function FolderGrid({ folders, assets, onOpenFolder }: Props) {
 
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
-      {folders.map((f) => (
-        <button
-          key={f.id}
-          onDoubleClick={() => onOpenFolder(f.id)}
-          onClick={() => onOpenFolder(f.id)}
-          className="group flex flex-col items-center gap-2 p-4 rounded-lg bg-vault-card hover:bg-vault-card-hover transition-colors text-left"
-        >
-          <FolderSimple
-            size={56}
-            weight="fill"
-            className="text-vault-folder group-hover:scale-105 transition-transform"
-          />
-          <span className="text-xs text-vault-fg truncate w-full text-center">
-            {f.name}
-          </span>
-        </button>
-      ))}
+      {folders.map((f) => {
+        const isSel = selected.has(f.id);
+        return (
+          <div
+            key={f.id}
+            onDoubleClick={() => onOpenFolder(f.id)}
+            onClick={() => onOpenFolder(f.id)}
+            className={`group relative flex flex-col items-center gap-2 p-5 rounded-md bg-white/[0.02] hover:bg-white/[0.05] border transition-colors cursor-pointer ${
+              isSel ? "border-white/40 bg-white/[0.06]" : "border-white/5"
+            }`}
+          >
+            <Checkbox
+              checked={isSel}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggle(f.id, "folder");
+              }}
+            />
+            <FolderIcon size={48} weight="fill" className="text-white/70" />
+            <span className="text-xs text-white/80 truncate w-full text-center">{f.name}</span>
+          </div>
+        );
+      })}
 
       {assets.map((a) => {
         const Icon = fileIcon(a.file_type);
         const isSel = selected.has(a.id);
         const url = getPublicUrl(a.storage_path);
         return (
-          <button
+          <div
             key={a.id}
-            onClick={() => toggle(a.id)}
-            className={`group relative flex flex-col rounded-lg overflow-hidden bg-vault-card hover:bg-vault-card-hover transition-all ${
-              isSel ? "ring-2 ring-vault-accent" : "ring-1 ring-transparent"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggle(a.id, "asset");
+            }}
+            className={`group relative flex flex-col rounded-md overflow-hidden bg-white/[0.02] hover:bg-white/[0.05] border transition-colors cursor-pointer ${
+              isSel ? "border-white/40" : "border-white/5"
             }`}
           >
-            <div className="aspect-video bg-black/40 flex items-center justify-center overflow-hidden">
+            <Checkbox
+              checked={isSel}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggle(a.id, "asset");
+              }}
+            />
+            <div className="aspect-video bg-black flex items-center justify-center overflow-hidden">
               {isImage(a.file_type) ? (
-                <img
-                  src={url}
-                  alt={a.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+                <img src={url} alt={a.name} className="w-full h-full object-cover" loading="lazy" />
               ) : (
-                <Icon size={40} weight="light" className="text-vault-fg-muted" />
+                <Icon size={36} weight="light" className="text-white/40" />
               )}
             </div>
-            <div className="px-2 py-1.5 text-xs text-vault-fg truncate text-center">
+            <div className="px-2 py-2 text-xs text-white/80 truncate text-center border-t border-white/5">
               {a.name}
             </div>
-            {isSel && (
-              <div className="absolute bottom-7 left-1/2 -translate-x-1/2">
-                <CheckCircle size={22} weight="fill" className="text-vault-accent drop-shadow-lg" />
-              </div>
-            )}
-          </button>
+          </div>
         );
       })}
     </div>

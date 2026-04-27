@@ -66,19 +66,19 @@ export function UploadDropZone({ currentFolderId, onUploaded, children }: Props)
       <div className="mb-4 flex items-center gap-2">
         <button
           onClick={handleNewFolder}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-vault-card hover:bg-vault-card-hover text-xs text-vault-fg border border-vault-border"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white border border-white/10"
         >
           <FolderPlus size={14} /> New folder
         </button>
-        <span className="text-xs text-vault-fg-muted">
-          Drag & drop files anywhere to upload
+        <span className="text-xs text-white/40">
+          Drag &amp; drop files anywhere to upload
         </span>
       </div>
       {children}
       {(over || uploading) && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-vault-accent/10 border-2 border-dashed border-vault-accent rounded-xl pointer-events-none">
-          <div className="flex flex-col items-center gap-3 text-vault-accent">
-            <CloudArrowUp size={56} weight="duotone" />
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/5 border-2 border-dashed border-white/30 rounded-xl pointer-events-none">
+          <div className="flex flex-col items-center gap-3 text-white">
+            <CloudArrowUp size={48} weight="duotone" />
             <p className="text-sm font-medium">
               {uploading ? "Uploading…" : "Drop to upload"}
             </p>
