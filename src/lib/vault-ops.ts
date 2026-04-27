@@ -162,10 +162,11 @@ export async function pasteClipboard(
 
 async function isDescendant(folderId: string, possibleDescId: string): Promise<boolean> {
   let cursor: string | null = possibleDescId;
-  while (cursor) {
+  while (cursor !== null) {
     if (cursor === folderId) return true;
-    const { data } = await supabase.from("folders").select("parent_id").eq("id", cursor).maybeSingle();
-    cursor = ((data as Folder | null)?.parent_id) ?? null;
+    const res = await supabase.from("folders").select("parent_id").eq("id", cursor).maybeSingle();
+    const row = res.data as Folder | null;
+    cursor = row?.parent_id ?? null;
   }
   return false;
 }
