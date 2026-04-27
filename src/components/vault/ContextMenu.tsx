@@ -42,11 +42,11 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
     <div
       ref={ref}
       style={{ left, top }}
-      className="fixed z-[200] min-w-[200px] py-1.5 bg-neutral-950 border border-white/15 rounded-lg shadow-2xl"
+      className="fixed z-[200] min-w-[200px] py-1.5 bg-vault-menu-bg border border-vault-hairline rounded-lg shadow-2xl"
     >
       {items.map((item, i) =>
         item.separator ? (
-          <div key={i} className="my-1 h-px bg-white/10" />
+          <div key={i} className="my-1 h-px bg-vault-hairline" />
         ) : (
           <button
             key={i}
@@ -58,10 +58,10 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
             }}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs text-left transition-colors ${
               item.disabled
-                ? "text-white/30 cursor-not-allowed"
+                ? "text-vault-fg-muted/60 cursor-not-allowed"
                 : item.danger
-                ? "text-red-400 hover:bg-red-500/15"
-                : "text-white/90 hover:bg-white/10"
+                ? "text-vault-danger hover:bg-vault-danger/15"
+                : "text-vault-fg hover:bg-vault-overlay-strong"
             }`}
           >
             {item.icon && <span className="w-4 flex justify-center">{item.icon}</span>}
