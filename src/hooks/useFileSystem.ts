@@ -5,6 +5,9 @@ export interface Folder {
   id: string;
   name: string;
   parent_id: string | null;
+  sidebar_pinned?: boolean;
+  info_md?: string;
+  created_at?: string;
 }
 export interface Asset {
   id: string;
@@ -14,6 +17,8 @@ export interface Asset {
   file_type: string | null;
   size_bytes: number | null;
   is_info?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export function useFileSystem(currentFolderId: string | null) {
