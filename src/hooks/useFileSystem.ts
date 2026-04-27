@@ -13,6 +13,7 @@ export interface Asset {
   folder_id: string | null;
   file_type: string | null;
   size_bytes: number | null;
+  is_info?: boolean;
 }
 
 export function useFileSystem(currentFolderId: string | null) {
