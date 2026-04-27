@@ -51,14 +51,15 @@ export async function getBreadcrumbs(folderId: string | null): Promise<Folder[]>
   const trail: Folder[] = [];
   let cursor: string | null = folderId;
   while (cursor) {
-    const { data } = await supabase
+    const res = await supabase
       .from("folders")
       .select("*")
       .eq("id", cursor)
       .maybeSingle();
-    if (!data) break;
-    trail.unshift(data as Folder);
-    cursor = (data as Folder).parent_id;
+    const row = res.data as Folder | null;
+    if (!row) break;
+    trail.unshift(row);
+    cursor = row.parent_id;
   }
   return trail;
 }
