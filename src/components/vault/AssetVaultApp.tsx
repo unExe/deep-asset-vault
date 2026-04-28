@@ -434,8 +434,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
           setHistory((h) => [...h.slice(0, histIdx + 1), id]);
           setHistIdx((i) => i + 1);
         }}
-        onOpenBuilder={() => setShowBuilder(true)}
       />
+
 
       <div className="md:pl-64">
         <header className="sticky top-0 z-30 backdrop-blur-md bg-vault-bg/85 border-b border-vault-hairline">
@@ -522,9 +522,6 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
       {renderInfoDialog()}
 
-      {showBuilder && isEditorMode && (
-        <HomepageBuilder onClose={() => setShowBuilder(false)} />
-      )}
 
       <UploadProgress />
     </div>
