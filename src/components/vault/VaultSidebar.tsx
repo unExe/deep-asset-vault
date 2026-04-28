@@ -20,10 +20,9 @@ interface Props {
   isEditorMode: boolean;
   currentFolderId: string | null;
   onNavigateFolder: (id: string | null) => void;
-  onOpenBuilder?: () => void;
 }
 
-export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder, onOpenBuilder }: Props) {
+export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }: Props) {
   const [pinned, setPinned] = useState<PinnedFolder[]>([]);
   const [openMobile, setOpenMobile] = useState(false);
   const favs = useFavorites();
