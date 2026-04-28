@@ -1,7 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Folder as FolderIcon, FileText, FilmSlate, Image as ImageIcon, MusicNote, Check, Info } from "@phosphor-icons/react";
 import { useVaultStore } from "@/lib/vault-store";
 import { getPublicUrl, type Asset, type Folder } from "@/hooks/useFileSystem";
+
+export interface DragItem { id: string; kind: "folder" | "asset" }
 
 interface Props {
   folders: Folder[];
@@ -16,6 +18,8 @@ interface Props {
   commitRename: () => void;
   cancelRename: () => void;
   cutIds: Set<string>;
+  isEditorMode?: boolean;
+  onMoveTo?: (destFolderId: string, items: DragItem[]) => void;
 }
 
 function fileIcon(type: string | null) {
