@@ -190,13 +190,15 @@ function SidebarLink({
 
 /** Pin/unpin helper. Triggers refresh in any mounted sidebar. */
 export async function togglePinFolder(id: string): Promise<boolean> {
-  const { data: cur } = await supabase
+  const { data: cur, error: readErr } = await supabase
     .from("folders")
     .select("sidebar_pinned")
     .eq("id", id)
     .maybeSingle();
+  if (readErr) throw readErr;
   const next = !((cur as { sidebar_pinned: boolean } | null)?.sidebar_pinned);
-  await supabase.from("folders").update({ sidebar_pinned: next }).eq("id", id);
+  const { error: upErr } = await supabase.from("folders").update({ sidebar_pinned: next }).eq("id", id);
+  if (upErr) throw upErr;
   if (typeof window !== "undefined") window.dispatchEvent(new Event("vault:pinned-changed"));
   return next;
 }
