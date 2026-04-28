@@ -1,7 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Folder as FolderIcon, FileText, FilmSlate, Image as ImageIcon, MusicNote, Check, Info } from "@phosphor-icons/react";
 import { useVaultStore } from "@/lib/vault-store";
 import { getPublicUrl, type Asset, type Folder } from "@/hooks/useFileSystem";
+
+export interface DragItem { id: string; kind: "folder" | "asset" }
 
 interface Props {
   folders: Folder[];
@@ -16,6 +18,8 @@ interface Props {
   commitRename: () => void;
   cancelRename: () => void;
   cutIds: Set<string>;
+  isEditorMode?: boolean;
+  onMoveTo?: (destFolderId: string, items: DragItem[]) => void;
 }
 
 function fileIcon(type: string | null) {
@@ -113,9 +117,12 @@ export function FolderGrid({
   commitRename,
   cancelRename,
   cutIds,
+  isEditorMode = false,
+  onMoveTo,
 }: Props) {
   const { selected, toggle, selectOnly, clear } = useVaultStore();
   const coarse = isCoarse();
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
   const handleItemClick = (e: React.MouseEvent, id: string, kind: "folder" | "asset", openOnTap: () => void) => {
     e.stopPropagation();
@@ -123,7 +130,6 @@ export function FolderGrid({
       toggle(id, kind);
       return;
     }
-    // On touch devices, single tap opens (selection happens via checkbox or long-press)
     if (coarse && selected.size === 0) {
       openOnTap();
       return;
@@ -131,7 +137,58 @@ export function FolderGrid({
     selectOnly(id, kind);
   };
 
-  // Split assets — info file pinned first and rendered larger
+  /** Build the list of items being dragged: selection (if dragged item is selected) else just dragged. */
+  const buildDragPayload = (id: string, kind: "folder" | "asset"): DragItem[] => {
+    if (selected.has(id) && selected.size > 1) {
+      return [...selected.entries()].map(([i, k]) => ({ id: i, kind: k }));
+    }
+    return [{ id, kind }];
+  };
+
+  const dragHandlers = (id: string, kind: "folder" | "asset") =>
+    isEditorMode && onMoveTo
+      ? {
+          draggable: true,
+          onDragStart: (e: React.DragEvent) => {
+            const payload = buildDragPayload(id, kind);
+            e.dataTransfer.setData("application/x-vault-items", JSON.stringify(payload));
+            e.dataTransfer.effectAllowed = "move";
+          },
+        }
+      : {};
+
+  const dropHandlers = (folderId: string) =>
+    isEditorMode && onMoveTo
+      ? {
+          onDragOver: (e: React.DragEvent) => {
+            if (!e.dataTransfer.types.includes("application/x-vault-items")) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            if (dropTargetId !== folderId) setDropTargetId(folderId);
+          },
+          onDragLeave: () => {
+            if (dropTargetId === folderId) setDropTargetId(null);
+          },
+          onDrop: (e: React.DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDropTargetId(null);
+            const raw = e.dataTransfer.getData("application/x-vault-items");
+            if (!raw) return;
+            try {
+              const items = JSON.parse(raw) as DragItem[];
+              // Don't drop a folder onto itself
+              const filtered = items.filter((it) => !(it.kind === "folder" && it.id === folderId));
+              if (filtered.length === 0) return;
+              onMoveTo!(folderId, filtered);
+            } catch {
+              /* noop */
+            }
+          },
+        }
+      : {};
+
+  // Split assets — info file pinned first
   const infoAsset = assets.find((a) => a.is_info);
   const otherAssets = assets.filter((a) => !a.is_info);
 
@@ -175,6 +232,9 @@ export function FolderGrid({
             folder={f}
             isSelected={selected.has(f.id)}
             isCut={cutIds.has(f.id)}
+            isDropTarget={dropTargetId === f.id}
+            dragProps={dragHandlers(f.id, "folder")}
+            dropProps={dropHandlers(f.id)}
             onClick={(e) => handleItemClick(e, f.id, "folder", () => onOpenFolder(f.id))}
             onDoubleClick={(e) => { e.stopPropagation(); onOpenFolder(f.id); }}
             onContextMenu={(e) => onContextMenu(e, { id: f.id, kind: "folder" })}
@@ -193,6 +253,7 @@ export function FolderGrid({
             asset={a}
             isSelected={selected.has(a.id)}
             isCut={cutIds.has(a.id)}
+            dragProps={dragHandlers(a.id, "asset")}
             onClick={(e) => handleItemClick(e, a.id, "asset", () => onOpenAsset(a))}
             onDoubleClick={(e) => { e.stopPropagation(); onOpenAsset(a); }}
             onContextMenu={(e) => onContextMenu(e, { id: a.id, kind: "asset" })}
@@ -223,10 +284,18 @@ interface TileBaseProps {
   cancelRename: () => void;
 }
 
-function FolderTile({ folder: f, isSelected, isCut, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & { folder: Folder }) {
+interface DnDExtras {
+  isDropTarget?: boolean;
+  dragProps?: React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
+  dropProps?: React.HTMLAttributes<HTMLDivElement>;
+}
+
+function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dropProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { folder: Folder }) {
   const lp = useLongPress(onContextMenu);
   return (
     <div
+      {...dragProps}
+      {...dropProps}
       onClick={(e) => { if (lp.didTrigger()) return; onClick(e); }}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
@@ -234,7 +303,11 @@ function FolderTile({ folder: f, isSelected, isCut, onClick, onDoubleClick, onCo
       onTouchEnd={lp.onTouchEnd}
       onTouchMove={lp.onTouchMove}
       className={`group relative flex flex-col items-center gap-2 p-3 sm:p-4 rounded-md bg-vault-overlay hover:bg-vault-overlay-strong border transition-colors cursor-pointer select-none ${
-        isSelected ? "border-vault-fg/40 bg-vault-overlay-strong" : "border-vault-hairline/50"
+        isDropTarget
+          ? "border-vault-accent ring-2 ring-vault-accent/40 bg-vault-overlay-strong"
+          : isSelected
+          ? "border-vault-fg/40 bg-vault-overlay-strong"
+          : "border-vault-hairline/50"
       } ${isCut ? "opacity-50" : ""}`}
     >
       <Checkbox checked={isSelected} onClick={onCheckbox} />
@@ -250,12 +323,13 @@ function FolderTile({ folder: f, isSelected, isCut, onClick, onDoubleClick, onCo
   );
 }
 
-function AssetTile({ asset: a, isSelected, isCut, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & { asset: Asset }) {
+function AssetTile({ asset: a, isSelected, isCut, dragProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { asset: Asset }) {
   const Icon = fileIcon(a.file_type);
   const url = getPublicUrl(a.storage_path);
   const lp = useLongPress(onContextMenu);
   return (
     <div
+      {...dragProps}
       onClick={(e) => { if (lp.didTrigger()) return; onClick(e); }}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
@@ -269,7 +343,7 @@ function AssetTile({ asset: a, isSelected, isCut, onClick, onDoubleClick, onCont
       <Checkbox checked={isSelected} onClick={onCheckbox} />
       <div className="aspect-video bg-vault-bg flex items-center justify-center overflow-hidden">
         {isImage(a.file_type) ? (
-          <img src={url} alt={a.name} className="w-full h-full object-cover" loading="lazy" />
+          <img src={url} alt={a.name} className="w-full h-full object-cover" loading="lazy" draggable={false} />
         ) : (
           <Icon size={30} weight="light" className="text-vault-fg-muted" />
         )}

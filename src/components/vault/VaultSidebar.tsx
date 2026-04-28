@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import {
   House,
   Star,
-  PencilRuler,
   Folder as FolderIcon,
   X as XIcon,
   List,
@@ -21,10 +20,9 @@ interface Props {
   isEditorMode: boolean;
   currentFolderId: string | null;
   onNavigateFolder: (id: string | null) => void;
-  onOpenBuilder?: () => void;
 }
 
-export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder, onOpenBuilder }: Props) {
+export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }: Props) {
   const [pinned, setPinned] = useState<PinnedFolder[]>([]);
   const [openMobile, setOpenMobile] = useState(false);
   const favs = useFavorites();
@@ -78,16 +76,6 @@ export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder, 
             }}
           />
           <SidebarLink icon={<Star size={15} />} label={`Favorites (${favs.length})`} to="/vault/favorites" onClick={() => setOpenMobile(false)} />
-          {isEditorMode && (
-            <SidebarBtn
-              icon={<PencilRuler size={15} />}
-              label="Build homepage"
-              onClick={() => {
-                onOpenBuilder?.();
-                setOpenMobile(false);
-              }}
-            />
-          )}
         </div>
 
         {/* Pinned folders */}
@@ -201,13 +189,15 @@ function SidebarLink({
 
 /** Pin/unpin helper. Triggers refresh in any mounted sidebar. */
 export async function togglePinFolder(id: string): Promise<boolean> {
-  const { data: cur } = await supabase
+  const { data: cur, error: readErr } = await supabase
     .from("folders")
     .select("sidebar_pinned")
     .eq("id", id)
     .maybeSingle();
+  if (readErr) throw readErr;
   const next = !((cur as { sidebar_pinned: boolean } | null)?.sidebar_pinned);
-  await supabase.from("folders").update({ sidebar_pinned: next }).eq("id", id);
+  const { error: upErr } = await supabase.from("folders").update({ sidebar_pinned: next }).eq("id", id);
+  if (upErr) throw upErr;
   if (typeof window !== "undefined") window.dispatchEvent(new Event("vault:pinned-changed"));
   return next;
 }
