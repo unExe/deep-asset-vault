@@ -11,7 +11,7 @@ import { AssetInfoDialog, FolderInfoDialog } from "@/components/vault/InfoDialog
 import { VaultSidebar, togglePinFolder } from "@/components/vault/VaultSidebar";
 import { CommentSection } from "@/components/vault/CommentSection";
 import { FolderInfoBanner } from "@/components/vault/FolderInfoEditor";
-import { HomepageBuilder } from "@/components/vault/HomepageBuilder";
+
 import { useFileSystem, type Asset } from "@/hooks/useFileSystem";
 import { useVaultStore } from "@/lib/vault-store";
 import { Favorites } from "@/lib/favorites";
@@ -60,7 +60,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [renameValue, setRenameValue] = useState("");
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const [info, setInfo] = useState<InfoState | null>(null);
-  const [showBuilder, setShowBuilder] = useState(false);
+  
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
@@ -235,9 +235,32 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
   const handleAddToSidebarSelected = async () => {
     const folderTargets = [...selected.entries()].filter(([, k]) => k === "folder").map(([id]) => id);
-    if (folderTargets.length === 0) return;
-    for (const id of folderTargets) await togglePinFolder(id);
-    toast.success("Sidebar updated");
+    if (folderTargets.length === 0) {
+      toast.error("Select at least one folder");
+      return;
+    }
+    try {
+      for (const id of folderTargets) await togglePinFolder(id);
+      toast.success(`Sidebar updated (${folderTargets.length})`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Pin failed");
+    }
+  };
+
+  /** Move selected items into a destination folder (drag-drop). */
+  const handleMoveTo = async (destFolderId: string | null, items: { id: string; kind: "folder" | "asset" }[]) => {
+    if (items.length === 0) return;
+    setBusy(true);
+    try {
+      await pasteClipboard(items, "cut", destFolderId);
+      toast.success(`Moved ${items.length} item(s)`);
+      clear();
+      void refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Move failed");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const canAddToSidebarSel = useMemo(
