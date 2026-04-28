@@ -419,6 +419,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       commitRename={commitRename}
       cancelRename={cancelRename}
       cutIds={cutIds}
+      isEditorMode={isEditorMode}
+      onMoveTo={handleMoveTo}
     />
   );
 
