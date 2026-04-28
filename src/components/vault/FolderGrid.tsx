@@ -284,10 +284,18 @@ interface TileBaseProps {
   cancelRename: () => void;
 }
 
-function FolderTile({ folder: f, isSelected, isCut, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & { folder: Folder }) {
+interface DnDExtras {
+  isDropTarget?: boolean;
+  dragProps?: React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
+  dropProps?: React.HTMLAttributes<HTMLDivElement>;
+}
+
+function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dropProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { folder: Folder }) {
   const lp = useLongPress(onContextMenu);
   return (
     <div
+      {...dragProps}
+      {...dropProps}
       onClick={(e) => { if (lp.didTrigger()) return; onClick(e); }}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
@@ -295,7 +303,11 @@ function FolderTile({ folder: f, isSelected, isCut, onClick, onDoubleClick, onCo
       onTouchEnd={lp.onTouchEnd}
       onTouchMove={lp.onTouchMove}
       className={`group relative flex flex-col items-center gap-2 p-3 sm:p-4 rounded-md bg-vault-overlay hover:bg-vault-overlay-strong border transition-colors cursor-pointer select-none ${
-        isSelected ? "border-vault-fg/40 bg-vault-overlay-strong" : "border-vault-hairline/50"
+        isDropTarget
+          ? "border-vault-accent ring-2 ring-vault-accent/40 bg-vault-overlay-strong"
+          : isSelected
+          ? "border-vault-fg/40 bg-vault-overlay-strong"
+          : "border-vault-hairline/50"
       } ${isCut ? "opacity-50" : ""}`}
     >
       <Checkbox checked={isSelected} onClick={onCheckbox} />
@@ -311,12 +323,13 @@ function FolderTile({ folder: f, isSelected, isCut, onClick, onDoubleClick, onCo
   );
 }
 
-function AssetTile({ asset: a, isSelected, isCut, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & { asset: Asset }) {
+function AssetTile({ asset: a, isSelected, isCut, dragProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { asset: Asset }) {
   const Icon = fileIcon(a.file_type);
   const url = getPublicUrl(a.storage_path);
   const lp = useLongPress(onContextMenu);
   return (
     <div
+      {...dragProps}
       onClick={(e) => { if (lp.didTrigger()) return; onClick(e); }}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
@@ -330,7 +343,7 @@ function AssetTile({ asset: a, isSelected, isCut, onClick, onDoubleClick, onCont
       <Checkbox checked={isSelected} onClick={onCheckbox} />
       <div className="aspect-video bg-vault-bg flex items-center justify-center overflow-hidden">
         {isImage(a.file_type) ? (
-          <img src={url} alt={a.name} className="w-full h-full object-cover" loading="lazy" />
+          <img src={url} alt={a.name} className="w-full h-full object-cover" loading="lazy" draggable={false} />
         ) : (
           <Icon size={30} weight="light" className="text-vault-fg-muted" />
         )}
