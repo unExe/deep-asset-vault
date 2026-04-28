@@ -117,9 +117,12 @@ export function FolderGrid({
   commitRename,
   cancelRename,
   cutIds,
+  isEditorMode = false,
+  onMoveTo,
 }: Props) {
   const { selected, toggle, selectOnly, clear } = useVaultStore();
   const coarse = isCoarse();
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
   const handleItemClick = (e: React.MouseEvent, id: string, kind: "folder" | "asset", openOnTap: () => void) => {
     e.stopPropagation();
@@ -127,7 +130,6 @@ export function FolderGrid({
       toggle(id, kind);
       return;
     }
-    // On touch devices, single tap opens (selection happens via checkbox or long-press)
     if (coarse && selected.size === 0) {
       openOnTap();
       return;
@@ -135,7 +137,58 @@ export function FolderGrid({
     selectOnly(id, kind);
   };
 
-  // Split assets — info file pinned first and rendered larger
+  /** Build the list of items being dragged: selection (if dragged item is selected) else just dragged. */
+  const buildDragPayload = (id: string, kind: "folder" | "asset"): DragItem[] => {
+    if (selected.has(id) && selected.size > 1) {
+      return [...selected.entries()].map(([i, k]) => ({ id: i, kind: k }));
+    }
+    return [{ id, kind }];
+  };
+
+  const dragHandlers = (id: string, kind: "folder" | "asset") =>
+    isEditorMode && onMoveTo
+      ? {
+          draggable: true,
+          onDragStart: (e: React.DragEvent) => {
+            const payload = buildDragPayload(id, kind);
+            e.dataTransfer.setData("application/x-vault-items", JSON.stringify(payload));
+            e.dataTransfer.effectAllowed = "move";
+          },
+        }
+      : {};
+
+  const dropHandlers = (folderId: string) =>
+    isEditorMode && onMoveTo
+      ? {
+          onDragOver: (e: React.DragEvent) => {
+            if (!e.dataTransfer.types.includes("application/x-vault-items")) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            if (dropTargetId !== folderId) setDropTargetId(folderId);
+          },
+          onDragLeave: () => {
+            if (dropTargetId === folderId) setDropTargetId(null);
+          },
+          onDrop: (e: React.DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDropTargetId(null);
+            const raw = e.dataTransfer.getData("application/x-vault-items");
+            if (!raw) return;
+            try {
+              const items = JSON.parse(raw) as DragItem[];
+              // Don't drop a folder onto itself
+              const filtered = items.filter((it) => !(it.kind === "folder" && it.id === folderId));
+              if (filtered.length === 0) return;
+              onMoveTo!(folderId, filtered);
+            } catch {
+              /* noop */
+            }
+          },
+        }
+      : {};
+
+  // Split assets — info file pinned first
   const infoAsset = assets.find((a) => a.is_info);
   const otherAssets = assets.filter((a) => !a.is_info);
 
@@ -179,6 +232,9 @@ export function FolderGrid({
             folder={f}
             isSelected={selected.has(f.id)}
             isCut={cutIds.has(f.id)}
+            isDropTarget={dropTargetId === f.id}
+            dragProps={dragHandlers(f.id, "folder")}
+            dropProps={dropHandlers(f.id)}
             onClick={(e) => handleItemClick(e, f.id, "folder", () => onOpenFolder(f.id))}
             onDoubleClick={(e) => { e.stopPropagation(); onOpenFolder(f.id); }}
             onContextMenu={(e) => onContextMenu(e, { id: f.id, kind: "folder" })}
@@ -197,6 +253,7 @@ export function FolderGrid({
             asset={a}
             isSelected={selected.has(a.id)}
             isCut={cutIds.has(a.id)}
+            dragProps={dragHandlers(a.id, "asset")}
             onClick={(e) => handleItemClick(e, a.id, "asset", () => onOpenAsset(a))}
             onDoubleClick={(e) => { e.stopPropagation(); onOpenAsset(a); }}
             onContextMenu={(e) => onContextMenu(e, { id: a.id, kind: "asset" })}
