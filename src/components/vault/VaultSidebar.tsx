@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import {
   House,
   Star,
-  PencilRuler,
   Folder as FolderIcon,
   X as XIcon,
   List,
@@ -78,16 +77,6 @@ export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder, 
             }}
           />
           <SidebarLink icon={<Star size={15} />} label={`Favorites (${favs.length})`} to="/vault/favorites" onClick={() => setOpenMobile(false)} />
-          {isEditorMode && (
-            <SidebarBtn
-              icon={<PencilRuler size={15} />}
-              label="Build homepage"
-              onClick={() => {
-                onOpenBuilder?.();
-                setOpenMobile(false);
-              }}
-            />
-          )}
         </div>
 
         {/* Pinned folders */}
