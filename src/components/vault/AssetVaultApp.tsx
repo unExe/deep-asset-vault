@@ -467,6 +467,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       cutIds={cutIds}
       isEditorMode={isEditorMode}
       onMoveTo={handleMoveTo}
+      onLongPressMove={handleStartMove}
     />
   );
 
