@@ -224,13 +224,25 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   };
 
   const handleFavoriteSelected = () => {
-    if (selected.size !== 1) return;
-    const [id, kind] = [...selected.entries()][0];
-    const item = kind === "folder" ? folders.find((f) => f.id === id) : assets.find((a) => a.id === id);
-    if (!item) return;
-    const wasFav = Favorites.has(id);
-    Favorites.toggle({ id, kind, name: item.name });
-    toast.success(wasFav ? "Removed from favorites" : "Added to favorites");
+    if (selected.size === 0) {
+      toast.error("Nothing selected");
+      return;
+    }
+    let added = 0;
+    let removed = 0;
+    for (const [id, kind] of selected.entries()) {
+      const item = kind === "folder" ? folders.find((f) => f.id === id) : assets.find((a) => a.id === id);
+      if (!item) continue;
+      if (Favorites.has(id)) {
+        Favorites.remove(id);
+        removed++;
+      } else {
+        Favorites.add({ id, kind, name: item.name });
+        added++;
+      }
+    }
+    if (added) toast.success(`Added ${added} to favorites`);
+    if (removed) toast.success(`Removed ${removed} from favorites`);
   };
 
   const handleAddToSidebarSelected = async () => {
@@ -240,11 +252,28 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       return;
     }
     try {
-      for (const id of folderTargets) await togglePinFolder(id);
-      toast.success(`Sidebar updated (${folderTargets.length})`);
+      const results = await Promise.all(folderTargets.map((id) => togglePinFolder(id)));
+      const pinned = results.filter(Boolean).length;
+      const unpinned = results.length - pinned;
+      if (pinned) toast.success(`Pinned ${pinned} folder(s) to sidebar`);
+      if (unpinned) toast.success(`Unpinned ${unpinned} folder(s)`);
     } catch (e) {
+      console.error("[pin]", e);
       toast.error(e instanceof Error ? e.message : "Pin failed");
     }
+  };
+
+  /** Begin a long-press move: capture target + (if part of selection) the whole selection. */
+  const handleStartMove = (target: { id: string; kind: "folder" | "asset" }) => {
+    let items: { id: string; kind: "folder" | "asset" }[];
+    if (selected.has(target.id) && selected.size > 1) {
+      items = [...selected.entries()].map(([id, kind]) => ({ id, kind }));
+    } else {
+      items = [target];
+      selectOnly(target.id, target.kind);
+    }
+    setPendingMove(items);
+    toast.info(`Moving ${items.length} item(s) — click destination folder, or press Esc`);
   };
 
   /** Move selected items into a destination folder (drag-drop). */
@@ -255,6 +284,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       await pasteClipboard(items, "cut", destFolderId);
       toast.success(`Moved ${items.length} item(s)`);
       clear();
+      setPendingMove(null);
       void refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Move failed");
