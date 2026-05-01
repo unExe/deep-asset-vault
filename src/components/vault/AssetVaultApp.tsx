@@ -424,6 +424,16 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     }
     // Empty area
     return [
+      ...(pendingMove
+        ? ([
+            {
+              label: `Move ${pendingMove.length} item(s) here`,
+              icon: <ArrowsOut size={14} />,
+              onClick: () => void handleMoveTo(folderId, pendingMove),
+            },
+            { separator: true } as MenuItem,
+          ] as MenuItem[])
+        : []),
       ...(isEditorMode
         ? ([
             { label: "New folder", icon: <FolderPlus size={14} />, onClick: handleNewFolder },
