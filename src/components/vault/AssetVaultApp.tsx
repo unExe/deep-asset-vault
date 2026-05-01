@@ -349,6 +349,10 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       } else if (e.key === "Delete" && selected.size && isEditorMode) {
         void handleDelete();
       } else if (e.key === "Escape") {
+        if (pendingMove) {
+          setPendingMove(null);
+          toast.message("Move cancelled");
+        }
         clear();
       }
     };
