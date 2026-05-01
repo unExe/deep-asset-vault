@@ -331,6 +331,7 @@ interface DnDExtras {
   isDropTarget?: boolean;
   dragProps?: React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
   dropProps?: React.HTMLAttributes<HTMLDivElement>;
+  onLongPressMove?: () => void;
 }
 
 function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dropProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { folder: Folder }) {
