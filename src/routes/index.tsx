@@ -95,12 +95,6 @@ function HomePage() {
           <div className="lg:col-span-5">
             <div className="relative aspect-square rounded-2xl overflow-hidden border border-vault-hairline bg-vault-overlay">
               <img src={logo} alt=".unExe — official logo" className="w-full h-full object-cover" loading="eager" />
-              <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/70 to-transparent">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/80">
-                  <Sparkle size={12} weight="fill" /> latest drop
-                </div>
-                <p className="mt-1.5 text-white font-medium text-sm">Overlays · transitions · SFX</p>
-              </div>
             </div>
           </div>
         </section>
