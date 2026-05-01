@@ -334,13 +334,15 @@ interface DnDExtras {
   onLongPressMove?: () => void;
 }
 
-function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dropProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { folder: Folder }) {
+function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dropProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename, onLongPressMove }: TileBaseProps & DnDExtras & { folder: Folder }) {
   const lp = useLongPress(onContextMenu);
+  const mlp = useMouseLongPress(() => onLongPressMove?.(), 600, !!onLongPressMove);
   return (
     <div
       {...dragProps}
       {...dropProps}
-      onClick={(e) => { if (lp.didTrigger()) return; onClick(e); }}
+      {...mlp.handlers}
+      onClick={(e) => { if (lp.didTrigger() || mlp.didTrigger()) { mlp.reset(); return; } onClick(e); }}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
       onTouchStart={lp.onTouchStart}
