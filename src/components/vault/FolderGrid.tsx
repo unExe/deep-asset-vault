@@ -159,6 +159,7 @@ export function FolderGrid({
   cutIds,
   isEditorMode = false,
   onMoveTo,
+  onLongPressMove,
 }: Props) {
   const { selected, toggle, selectOnly, clear } = useVaultStore();
   const coarse = isCoarse();
