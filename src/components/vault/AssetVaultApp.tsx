@@ -67,6 +67,17 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
   const navigate = useCallback(
     (id: string | null) => {
+      // Intercept navigation when in move-mode: destination = clicked folder
+      if (pendingMove && pendingMove.length) {
+        // Don't allow moving into one of the moved folders themselves
+        const moving = pendingMove;
+        if (id !== null && moving.some((m) => m.kind === "folder" && m.id === id)) {
+          toast.error("Can't move a folder into itself");
+          return;
+        }
+        void handleMoveTo(id, moving);
+        return;
+      }
       clear();
       setFolderId(id);
       setHistory((h) => {
@@ -76,7 +87,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       });
       setHistIdx((i) => i + 1);
     },
-    [clear, histIdx],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clear, histIdx, pendingMove],
   );
 
   const goBack = () => {
