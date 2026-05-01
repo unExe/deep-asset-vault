@@ -60,7 +60,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [renameValue, setRenameValue] = useState("");
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const [info, setInfo] = useState<InfoState | null>(null);
-  
+  const [pendingMove, setPendingMove] = useState<{ id: string; kind: "folder" | "asset" }[] | null>(null);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
