@@ -285,6 +285,7 @@ export function FolderGrid({
             setRenameValue={setRenameValue}
             commitRename={commitRename}
             cancelRename={cancelRename}
+            onLongPressMove={isEditorMode && onLongPressMove ? () => onLongPressMove({ id: f.id, kind: "folder" }) : undefined}
           />
         ))}
 
@@ -304,6 +305,7 @@ export function FolderGrid({
             setRenameValue={setRenameValue}
             commitRename={commitRename}
             cancelRename={cancelRename}
+            onLongPressMove={isEditorMode && onLongPressMove ? () => onLongPressMove({ id: a.id, kind: "asset" }) : undefined}
           />
         ))}
       </div>
