@@ -20,6 +20,8 @@ interface Props {
   cutIds: Set<string>;
   isEditorMode?: boolean;
   onMoveTo?: (destFolderId: string, items: DragItem[]) => void;
+  /** Editor-only: triggered after a 600ms left-mouse hold on a tile. */
+  onLongPressMove?: (target: { id: string; kind: "folder" | "asset" }) => void;
 }
 
 function fileIcon(type: string | null) {
