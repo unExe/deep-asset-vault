@@ -369,14 +369,16 @@ function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dro
   );
 }
 
-function AssetTile({ asset: a, isSelected, isCut, dragProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { asset: Asset }) {
+function AssetTile({ asset: a, isSelected, isCut, dragProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename, onLongPressMove }: TileBaseProps & DnDExtras & { asset: Asset }) {
   const Icon = fileIcon(a.file_type);
   const url = getPublicUrl(a.storage_path);
   const lp = useLongPress(onContextMenu);
+  const mlp = useMouseLongPress(() => onLongPressMove?.(), 600, !!onLongPressMove);
   return (
     <div
       {...dragProps}
-      onClick={(e) => { if (lp.didTrigger()) return; onClick(e); }}
+      {...mlp.handlers}
+      onClick={(e) => { if (lp.didTrigger() || mlp.didTrigger()) { mlp.reset(); return; } onClick(e); }}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
       onTouchStart={lp.onTouchStart}
