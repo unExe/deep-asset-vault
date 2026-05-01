@@ -527,6 +527,19 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
         <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
           <FolderInfoBanner folderId={folderId} isEditorMode={isEditorMode} />
 
+          {pendingMove && (
+            <div className="mb-3 flex items-center gap-3 px-4 py-2.5 rounded-lg bg-vault-accent/15 border border-vault-accent/40 text-vault-fg text-sm">
+              <span className="font-medium">Moving {pendingMove.length} item(s)</span>
+              <span className="text-vault-fg-muted text-xs">— click a destination folder, or press Esc to cancel</span>
+              <button
+                onClick={() => { setPendingMove(null); toast.message("Move cancelled"); }}
+                className="ml-auto text-xs px-2.5 py-1 rounded hover:bg-vault-overlay-strong"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div className="text-vault-fg-muted text-sm py-32 text-center">Loading…</div>
           ) : isEditorMode ? (
