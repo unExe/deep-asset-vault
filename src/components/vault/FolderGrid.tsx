@@ -20,6 +20,8 @@ interface Props {
   cutIds: Set<string>;
   isEditorMode?: boolean;
   onMoveTo?: (destFolderId: string, items: DragItem[]) => void;
+  /** Editor-only: triggered after a 600ms left-mouse hold on a tile. */
+  onLongPressMove?: (target: { id: string; kind: "folder" | "asset" }) => void;
 }
 
 function fileIcon(type: string | null) {
@@ -104,6 +106,44 @@ function useLongPress(onLong: (e: React.MouseEvent) => void) {
   return { onTouchStart: start, onTouchEnd: cancel, onTouchMove: cancel, didTrigger: () => triggered.current };
 }
 
+/** Mouse long-press hook (left-button hold for `ms`). Cancels on move/up/leave. */
+function useMouseLongPress(onLong: () => void, ms = 600, enabled = true) {
+  const timer = useRef<number | null>(null);
+  const triggered = useRef(false);
+  const startPos = useRef<{ x: number; y: number } | null>(null);
+
+  const cancel = () => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    startPos.current = null;
+  };
+
+  return {
+    didTrigger: () => triggered.current,
+    reset: () => { triggered.current = false; },
+    handlers: enabled
+      ? {
+          onMouseDown: (e: React.MouseEvent) => {
+            if (e.button !== 0) return;
+            triggered.current = false;
+            startPos.current = { x: e.clientX, y: e.clientY };
+            timer.current = window.setTimeout(() => {
+              triggered.current = true;
+              onLong();
+            }, ms);
+          },
+          onMouseMove: (e: React.MouseEvent) => {
+            if (!startPos.current) return;
+            const dx = e.clientX - startPos.current.x;
+            const dy = e.clientY - startPos.current.y;
+            if (dx * dx + dy * dy > 36) cancel(); // moved >6px → cancel
+          },
+          onMouseUp: cancel,
+          onMouseLeave: cancel,
+        }
+      : {},
+  };
+}
+
 export function FolderGrid({
   folders,
   assets,
@@ -119,6 +159,7 @@ export function FolderGrid({
   cutIds,
   isEditorMode = false,
   onMoveTo,
+  onLongPressMove,
 }: Props) {
   const { selected, toggle, selectOnly, clear } = useVaultStore();
   const coarse = isCoarse();
@@ -244,6 +285,7 @@ export function FolderGrid({
             setRenameValue={setRenameValue}
             commitRename={commitRename}
             cancelRename={cancelRename}
+            onLongPressMove={isEditorMode && onLongPressMove ? () => onLongPressMove({ id: f.id, kind: "folder" }) : undefined}
           />
         ))}
 
@@ -263,6 +305,7 @@ export function FolderGrid({
             setRenameValue={setRenameValue}
             commitRename={commitRename}
             cancelRename={cancelRename}
+            onLongPressMove={isEditorMode && onLongPressMove ? () => onLongPressMove({ id: a.id, kind: "asset" }) : undefined}
           />
         ))}
       </div>
@@ -288,15 +331,18 @@ interface DnDExtras {
   isDropTarget?: boolean;
   dragProps?: React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
   dropProps?: React.HTMLAttributes<HTMLDivElement>;
+  onLongPressMove?: () => void;
 }
 
-function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dropProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { folder: Folder }) {
+function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dropProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename, onLongPressMove }: TileBaseProps & DnDExtras & { folder: Folder }) {
   const lp = useLongPress(onContextMenu);
+  const mlp = useMouseLongPress(() => onLongPressMove?.(), 600, !!onLongPressMove);
   return (
     <div
       {...dragProps}
       {...dropProps}
-      onClick={(e) => { if (lp.didTrigger()) return; onClick(e); }}
+      {...mlp.handlers}
+      onClick={(e) => { if (lp.didTrigger() || mlp.didTrigger()) { mlp.reset(); return; } onClick(e); }}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
       onTouchStart={lp.onTouchStart}
@@ -323,14 +369,16 @@ function FolderTile({ folder: f, isSelected, isCut, isDropTarget, dragProps, dro
   );
 }
 
-function AssetTile({ asset: a, isSelected, isCut, dragProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename }: TileBaseProps & DnDExtras & { asset: Asset }) {
+function AssetTile({ asset: a, isSelected, isCut, dragProps, onClick, onDoubleClick, onContextMenu, onCheckbox, renaming, renameValue, setRenameValue, commitRename, cancelRename, onLongPressMove }: TileBaseProps & DnDExtras & { asset: Asset }) {
   const Icon = fileIcon(a.file_type);
   const url = getPublicUrl(a.storage_path);
   const lp = useLongPress(onContextMenu);
+  const mlp = useMouseLongPress(() => onLongPressMove?.(), 600, !!onLongPressMove);
   return (
     <div
       {...dragProps}
-      onClick={(e) => { if (lp.didTrigger()) return; onClick(e); }}
+      {...mlp.handlers}
+      onClick={(e) => { if (lp.didTrigger() || mlp.didTrigger()) { mlp.reset(); return; } onClick(e); }}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
       onTouchStart={lp.onTouchStart}

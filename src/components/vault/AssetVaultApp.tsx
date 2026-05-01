@@ -60,13 +60,24 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [renameValue, setRenameValue] = useState("");
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const [info, setInfo] = useState<InfoState | null>(null);
-  
+  const [pendingMove, setPendingMove] = useState<{ id: string; kind: "folder" | "asset" }[] | null>(null);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
 
   const navigate = useCallback(
     (id: string | null) => {
+      // Intercept navigation when in move-mode: destination = clicked folder
+      if (pendingMove && pendingMove.length) {
+        // Don't allow moving into one of the moved folders themselves
+        const moving = pendingMove;
+        if (id !== null && moving.some((m) => m.kind === "folder" && m.id === id)) {
+          toast.error("Can't move a folder into itself");
+          return;
+        }
+        void handleMoveTo(id, moving);
+        return;
+      }
       clear();
       setFolderId(id);
       setHistory((h) => {
@@ -76,7 +87,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       });
       setHistIdx((i) => i + 1);
     },
-    [clear, histIdx],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clear, histIdx, pendingMove],
   );
 
   const goBack = () => {
@@ -224,13 +236,25 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   };
 
   const handleFavoriteSelected = () => {
-    if (selected.size !== 1) return;
-    const [id, kind] = [...selected.entries()][0];
-    const item = kind === "folder" ? folders.find((f) => f.id === id) : assets.find((a) => a.id === id);
-    if (!item) return;
-    const wasFav = Favorites.has(id);
-    Favorites.toggle({ id, kind, name: item.name });
-    toast.success(wasFav ? "Removed from favorites" : "Added to favorites");
+    if (selected.size === 0) {
+      toast.error("Nothing selected");
+      return;
+    }
+    let added = 0;
+    let removed = 0;
+    for (const [id, kind] of selected.entries()) {
+      const item = kind === "folder" ? folders.find((f) => f.id === id) : assets.find((a) => a.id === id);
+      if (!item) continue;
+      if (Favorites.has(id)) {
+        Favorites.remove(id);
+        removed++;
+      } else {
+        Favorites.add({ id, kind, name: item.name });
+        added++;
+      }
+    }
+    if (added) toast.success(`Added ${added} to favorites`);
+    if (removed) toast.success(`Removed ${removed} from favorites`);
   };
 
   const handleAddToSidebarSelected = async () => {
@@ -240,11 +264,28 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       return;
     }
     try {
-      for (const id of folderTargets) await togglePinFolder(id);
-      toast.success(`Sidebar updated (${folderTargets.length})`);
+      const results = await Promise.all(folderTargets.map((id) => togglePinFolder(id)));
+      const pinned = results.filter(Boolean).length;
+      const unpinned = results.length - pinned;
+      if (pinned) toast.success(`Pinned ${pinned} folder(s) to sidebar`);
+      if (unpinned) toast.success(`Unpinned ${unpinned} folder(s)`);
     } catch (e) {
+      console.error("[pin]", e);
       toast.error(e instanceof Error ? e.message : "Pin failed");
     }
+  };
+
+  /** Begin a long-press move: capture target + (if part of selection) the whole selection. */
+  const handleStartMove = (target: { id: string; kind: "folder" | "asset" }) => {
+    let items: { id: string; kind: "folder" | "asset" }[];
+    if (selected.has(target.id) && selected.size > 1) {
+      items = [...selected.entries()].map(([id, kind]) => ({ id, kind }));
+    } else {
+      items = [target];
+      selectOnly(target.id, target.kind);
+    }
+    setPendingMove(items);
+    toast.info(`Moving ${items.length} item(s) — click destination folder, or press Esc`);
   };
 
   /** Move selected items into a destination folder (drag-drop). */
@@ -255,6 +296,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       await pasteClipboard(items, "cut", destFolderId);
       toast.success(`Moved ${items.length} item(s)`);
       clear();
+      setPendingMove(null);
       void refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Move failed");
@@ -307,6 +349,10 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       } else if (e.key === "Delete" && selected.size && isEditorMode) {
         void handleDelete();
       } else if (e.key === "Escape") {
+        if (pendingMove) {
+          setPendingMove(null);
+          toast.message("Move cancelled");
+        }
         clear();
       }
     };
@@ -378,6 +424,16 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     }
     // Empty area
     return [
+      ...(pendingMove
+        ? ([
+            {
+              label: `Move ${pendingMove.length} item(s) here`,
+              icon: <ArrowsOut size={14} />,
+              onClick: () => void handleMoveTo(folderId, pendingMove),
+            },
+            { separator: true } as MenuItem,
+          ] as MenuItem[])
+        : []),
       ...(isEditorMode
         ? ([
             { label: "New folder", icon: <FolderPlus size={14} />, onClick: handleNewFolder },
@@ -421,6 +477,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       cutIds={cutIds}
       isEditorMode={isEditorMode}
       onMoveTo={handleMoveTo}
+      onLongPressMove={handleStartMove}
     />
   );
 
@@ -479,6 +536,19 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
         <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
           <FolderInfoBanner folderId={folderId} isEditorMode={isEditorMode} />
+
+          {pendingMove && (
+            <div className="mb-3 flex items-center gap-3 px-4 py-2.5 rounded-lg bg-vault-accent/15 border border-vault-accent/40 text-vault-fg text-sm">
+              <span className="font-medium">Moving {pendingMove.length} item(s)</span>
+              <span className="text-vault-fg-muted text-xs">— click a destination folder, or press Esc to cancel</span>
+              <button
+                onClick={() => { setPendingMove(null); toast.message("Move cancelled"); }}
+                className="ml-auto text-xs px-2.5 py-1 rounded hover:bg-vault-overlay-strong"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
 
           {loading ? (
             <div className="text-vault-fg-muted text-sm py-32 text-center">Loading…</div>
