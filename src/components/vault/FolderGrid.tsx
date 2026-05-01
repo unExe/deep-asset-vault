@@ -106,6 +106,44 @@ function useLongPress(onLong: (e: React.MouseEvent) => void) {
   return { onTouchStart: start, onTouchEnd: cancel, onTouchMove: cancel, didTrigger: () => triggered.current };
 }
 
+/** Mouse long-press hook (left-button hold for `ms`). Cancels on move/up/leave. */
+function useMouseLongPress(onLong: () => void, ms = 600, enabled = true) {
+  const timer = useRef<number | null>(null);
+  const triggered = useRef(false);
+  const startPos = useRef<{ x: number; y: number } | null>(null);
+
+  const cancel = () => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    startPos.current = null;
+  };
+
+  return {
+    didTrigger: () => triggered.current,
+    reset: () => { triggered.current = false; },
+    handlers: enabled
+      ? {
+          onMouseDown: (e: React.MouseEvent) => {
+            if (e.button !== 0) return;
+            triggered.current = false;
+            startPos.current = { x: e.clientX, y: e.clientY };
+            timer.current = window.setTimeout(() => {
+              triggered.current = true;
+              onLong();
+            }, ms);
+          },
+          onMouseMove: (e: React.MouseEvent) => {
+            if (!startPos.current) return;
+            const dx = e.clientX - startPos.current.x;
+            const dy = e.clientY - startPos.current.y;
+            if (dx * dx + dy * dy > 36) cancel(); // moved >6px → cancel
+          },
+          onMouseUp: cancel,
+          onMouseLeave: cancel,
+        }
+      : {},
+  };
+}
+
 export function FolderGrid({
   folders,
   assets,
