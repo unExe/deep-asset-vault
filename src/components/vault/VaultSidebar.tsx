@@ -6,6 +6,8 @@ import {
   Folder as FolderIcon,
   X as XIcon,
   List,
+  Article,
+  Pencil,
 } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorites, useFavorites } from "@/lib/favorites";
@@ -76,6 +78,10 @@ export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }
             }}
           />
           <SidebarLink icon={<Star size={15} />} label={`Favorites (${favs.length})`} to="/vault/favorites" onClick={() => setOpenMobile(false)} />
+          <SidebarLink icon={<Article size={15} />} label="Blog" to="/blog" onClick={() => setOpenMobile(false)} />
+          {isEditorMode && (
+            <SidebarLink icon={<Pencil size={15} />} label="Write blog post" to="/admin/blog" onClick={() => setOpenMobile(false)} />
+          )}
         </div>
 
         {/* Pinned folders */}

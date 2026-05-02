@@ -10,13 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VaultRouteImport } from './routes/vault'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VaultFavoritesRouteImport } from './routes/vault.favorites'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminLetmeuploadRouteImport } from './routes/admin.letmeupload'
+import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 
 const VaultRoute = VaultRouteImport.update({
   id: '/vault',
   path: '/vault',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -29,42 +37,85 @@ const VaultFavoritesRoute = VaultFavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => VaultRoute,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
+} as any)
 const AdminLetmeuploadRoute = AdminLetmeuploadRouteImport.update({
   id: '/admin/letmeupload',
   path: '/admin/letmeupload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBlogRoute = AdminBlogRouteImport.update({
+  id: '/admin/blog',
+  path: '/admin/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/blog': typeof BlogRouteWithChildren
   '/vault': typeof VaultRouteWithChildren
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/vault/favorites': typeof VaultFavoritesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/blog': typeof BlogRouteWithChildren
   '/vault': typeof VaultRouteWithChildren
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/vault/favorites': typeof VaultFavoritesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/blog': typeof BlogRouteWithChildren
   '/vault': typeof VaultRouteWithChildren
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/vault/favorites': typeof VaultFavoritesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/vault' | '/admin/letmeupload' | '/vault/favorites'
+  fullPaths:
+    | '/'
+    | '/blog'
+    | '/vault'
+    | '/admin/blog'
+    | '/admin/letmeupload'
+    | '/blog/$slug'
+    | '/vault/favorites'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/vault' | '/admin/letmeupload' | '/vault/favorites'
-  id: '__root__' | '/' | '/vault' | '/admin/letmeupload' | '/vault/favorites'
+  to:
+    | '/'
+    | '/blog'
+    | '/vault'
+    | '/admin/blog'
+    | '/admin/letmeupload'
+    | '/blog/$slug'
+    | '/vault/favorites'
+  id:
+    | '__root__'
+    | '/'
+    | '/blog'
+    | '/vault'
+    | '/admin/blog'
+    | '/admin/letmeupload'
+    | '/blog/$slug'
+    | '/vault/favorites'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BlogRoute: typeof BlogRouteWithChildren
   VaultRoute: typeof VaultRouteWithChildren
+  AdminBlogRoute: typeof AdminBlogRoute
   AdminLetmeuploadRoute: typeof AdminLetmeuploadRoute
 }
 
@@ -75,6 +126,13 @@ declare module '@tanstack/react-router' {
       path: '/vault'
       fullPath: '/vault'
       preLoaderRoute: typeof VaultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -91,6 +149,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VaultFavoritesRouteImport
       parentRoute: typeof VaultRoute
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/admin/letmeupload': {
       id: '/admin/letmeupload'
       path: '/admin/letmeupload'
@@ -98,8 +163,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLetmeuploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/blog': {
+      id: '/admin/blog'
+      path: '/admin/blog'
+      fullPath: '/admin/blog'
+      preLoaderRoute: typeof AdminBlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface VaultRouteChildren {
   VaultFavoritesRoute: typeof VaultFavoritesRoute
@@ -113,7 +195,9 @@ const VaultRouteWithChildren = VaultRoute._addFileChildren(VaultRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BlogRoute: BlogRouteWithChildren,
   VaultRoute: VaultRouteWithChildren,
+  AdminBlogRoute: AdminBlogRoute,
   AdminLetmeuploadRoute: AdminLetmeuploadRoute,
 }
 export const routeTree = rootRouteImport
