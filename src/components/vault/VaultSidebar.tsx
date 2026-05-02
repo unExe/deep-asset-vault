@@ -6,6 +6,7 @@ import {
   Folder as FolderIcon,
   X as XIcon,
   List,
+  Article,
 } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorites, useFavorites } from "@/lib/favorites";
