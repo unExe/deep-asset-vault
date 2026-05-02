@@ -7,6 +7,7 @@ import {
   X as XIcon,
   List,
   Article,
+  Pencil,
 } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorites, useFavorites } from "@/lib/favorites";
