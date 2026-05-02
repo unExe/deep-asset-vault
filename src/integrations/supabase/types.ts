@@ -183,6 +183,33 @@ export type Database = {
           },
         ]
       }
+      gdrive_embeds: {
+        Row: {
+          created_at: string
+          drive_folder_id: string
+          id: string
+          name: string
+          parent_folder_id: string | null
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          drive_folder_id: string
+          id?: string
+          name: string
+          parent_folder_id?: string | null
+          position?: number
+        }
+        Update: {
+          created_at?: string
+          drive_folder_id?: string
+          id?: string
+          name?: string
+          parent_folder_id?: string | null
+          position?: number
+        }
+        Relationships: []
+      }
       homepage_blocks: {
         Row: {
           block_type: string
