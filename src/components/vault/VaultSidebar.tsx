@@ -77,6 +77,10 @@ export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }
             }}
           />
           <SidebarLink icon={<Star size={15} />} label={`Favorites (${favs.length})`} to="/vault/favorites" onClick={() => setOpenMobile(false)} />
+          <SidebarLink icon={<Article size={15} />} label="Blog" to="/blog" onClick={() => setOpenMobile(false)} />
+          {isEditorMode && (
+            <SidebarLink icon={<Pencil size={15} />} label="Write blog post" to="/admin/blog" onClick={() => setOpenMobile(false)} />
+          )}
         </div>
 
         {/* Pinned folders */}
