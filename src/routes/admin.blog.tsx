@@ -18,6 +18,7 @@ interface BlogRow {
   title: string;
   slug: string;
   excerpt: string;
+  content: string;
   cover_url: string | null;
   tags: string[];
   published: boolean;
