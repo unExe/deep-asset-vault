@@ -9,7 +9,7 @@ import {
   GoogleDriveLogo,
   CaretRight,
 } from "@phosphor-icons/react";
-import { listDriveFolder, type DriveFile } from "@/server/gdrive.functions";
+import { listDriveFolder, type DriveFile } from "@/lib/gdrive.functions";
 import { driveDownloadUrl, drivePreviewUrl, driveFolderUrl, isDriveFolder } from "@/lib/gdrive";
 
 interface Props {
