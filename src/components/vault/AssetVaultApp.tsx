@@ -11,6 +11,7 @@ import { AssetInfoDialog, FolderInfoDialog } from "@/components/vault/InfoDialog
 import { VaultSidebar, togglePinFolder } from "@/components/vault/VaultSidebar";
 import { CommentSection } from "@/components/vault/CommentSection";
 import { FolderInfoBanner } from "@/components/vault/FolderInfoEditor";
+import { GDriveSection } from "@/components/vault/GDriveSection";
 
 import { useFileSystem, type Asset } from "@/hooks/useFileSystem";
 import { useVaultStore } from "@/lib/vault-store";
