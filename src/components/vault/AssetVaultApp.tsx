@@ -11,6 +11,7 @@ import { AssetInfoDialog, FolderInfoDialog } from "@/components/vault/InfoDialog
 import { VaultSidebar, togglePinFolder } from "@/components/vault/VaultSidebar";
 import { CommentSection } from "@/components/vault/CommentSection";
 import { FolderInfoBanner } from "@/components/vault/FolderInfoEditor";
+import { GDriveSection } from "@/components/vault/GDriveSection";
 
 import { useFileSystem, type Asset } from "@/hooks/useFileSystem";
 import { useVaultStore } from "@/lib/vault-store";
@@ -536,6 +537,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
         <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
           <FolderInfoBanner folderId={folderId} isEditorMode={isEditorMode} />
+          <GDriveSection currentFolderId={folderId} isEditorMode={isEditorMode} search={search} />
+
 
           {pendingMove && (
             <div className="mb-3 flex items-center gap-3 px-4 py-2.5 rounded-lg bg-vault-accent/15 border border-vault-accent/40 text-vault-fg text-sm">
