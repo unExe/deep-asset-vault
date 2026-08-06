@@ -166,7 +166,12 @@ function useMouseLongPress(onLong: () => void, ms = 600, enabled = true) {
 export function FolderGrid({
   folders,
   assets,
+  embeds = [],
+  onOpenEmbed,
+  onRenameEmbed,
+  onRemoveEmbed,
   onOpenFolder,
+
   onOpenAsset,
   onContextMenu,
   onEmptyContextMenu,
