@@ -1,13 +1,31 @@
 import { useRef, useState } from "react";
-import { Folder as FolderIcon, FileText, FilmSlate, Image as ImageIcon, MusicNote, Check, Info } from "@phosphor-icons/react";
+import {
+  Folder as FolderIcon,
+  FileText,
+  FilmSlate,
+  Image as ImageIcon,
+  MusicNote,
+  Check,
+  Info,
+  GoogleDriveLogo,
+  LinkSimple,
+  Trash,
+  PencilSimple,
+} from "@phosphor-icons/react";
 import { useVaultStore } from "@/lib/vault-store";
 import { getPublicUrl, type Asset, type Folder } from "@/hooks/useFileSystem";
+import { decodeEmbedRef, type GDriveEmbed } from "@/lib/gdrive";
 
 export interface DragItem { id: string; kind: "folder" | "asset" }
 
 interface Props {
   folders: Folder[];
   assets: Asset[];
+  /** Google Drive / link embeds, rendered inline with normal folders. */
+  embeds?: GDriveEmbed[];
+  onOpenEmbed?: (embed: GDriveEmbed) => void;
+  onRenameEmbed?: (embed: GDriveEmbed) => void;
+  onRemoveEmbed?: (embed: GDriveEmbed) => void;
   onOpenFolder: (id: string) => void;
   onOpenAsset: (asset: Asset) => void;
   onContextMenu: (e: React.MouseEvent, target: { id: string; kind: "folder" | "asset" }) => void;
@@ -23,6 +41,7 @@ interface Props {
   /** Editor-only: triggered after a 600ms left-mouse hold on a tile. */
   onLongPressMove?: (target: { id: string; kind: "folder" | "asset" }) => void;
 }
+
 
 function fileIcon(type: string | null) {
   if (!type) return FileText;
