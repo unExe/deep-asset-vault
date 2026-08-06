@@ -257,7 +257,7 @@ export function FolderGrid({
   const infoAsset = assets.find((a) => a.is_info);
   const otherAssets = assets.filter((a) => !a.is_info);
 
-  if (folders.length === 0 && assets.length === 0) {
+  if (folders.length === 0 && assets.length === 0 && embeds.length === 0) {
     return (
       <div
         onClick={clear}
