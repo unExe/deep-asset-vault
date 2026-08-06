@@ -473,3 +473,68 @@ function InfoTile({ asset: a, isSelected, isCut, onClick, onDoubleClick, onConte
     </div>
   );
 }
+
+/** Drive folder / Drive file / external-link tile — looks like a normal tile with a small badge. */
+function EmbedTile({
+  embed,
+  isEditorMode,
+  onOpen,
+  onRename,
+  onRemove,
+}: {
+  embed: GDriveEmbed;
+  isEditorMode: boolean;
+  onOpen: () => void;
+  onRename: () => void;
+  onRemove: () => void;
+}) {
+  const decoded = decodeEmbedRef(embed.drive_folder_id);
+  const isLink = decoded.kind === "link";
+  const isFile = decoded.kind === "file";
+  const Main = isFile ? fileIcon(decoded.fileType ?? null) : isLink ? LinkSimple : FolderIcon;
+
+  return (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen();
+      }}
+      onDoubleClick={(e) => e.stopPropagation()}
+      className="group relative flex flex-col items-center gap-2 p-3 sm:p-4 rounded-md bg-vault-overlay hover:bg-vault-overlay-strong border border-vault-hairline/50 transition-colors cursor-pointer select-none"
+    >
+      <span className="absolute top-1.5 right-1.5 z-10">
+        {isLink ? (
+          <LinkSimple size={13} className="text-vault-fg-muted" />
+        ) : (
+          <GoogleDriveLogo size={13} weight="fill" className="text-vault-accent" />
+        )}
+      </span>
+      <Main size={40} weight={isFile || isLink ? "light" : "fill"} className={isFile || isLink ? "text-vault-fg-muted" : "text-vault-folder"} />
+      <span className="block text-xs text-vault-fg truncate text-center w-full">{embed.name}</span>
+      {isEditorMode && (
+        <div className="absolute bottom-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100">
+          <button
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onRename();
+            }}
+            className="p-1 rounded bg-vault-menu-bg border border-vault-hairline text-vault-fg-muted"
+            aria-label="Rename embed"
+          >
+            <PencilSimple size={12} />
+          </button>
+          <button
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onRemove();
+            }}
+            className="p-1 rounded bg-vault-menu-bg border border-vault-hairline text-vault-danger"
+            aria-label="Remove embed"
+          >
+            <Trash size={12} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
