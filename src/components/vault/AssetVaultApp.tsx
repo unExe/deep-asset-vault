@@ -522,6 +522,10 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     <FolderGrid
       folders={filteredFolders}
       assets={filteredAssets}
+      embeds={filteredEmbeds}
+      onOpenEmbed={openEmbed}
+      onRenameEmbed={(em) => void handleRenameEmbed(em)}
+      onRemoveEmbed={(em) => void handleRemoveEmbed(em)}
       onOpenFolder={navigate}
       onOpenAsset={(a) => setPreviewQueue({ items: [a], start: 0 })}
       onContextMenu={openItemContext}
@@ -543,6 +547,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       <VaultSidebar
         isEditorMode={isEditorMode}
         currentFolderId={folderId}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
         onNavigateFolder={(id) => {
           // Navigate clearing history forward
           clear();
@@ -553,7 +559,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       />
 
 
-      <div className="md:pl-64">
+      <div className={sidebarCollapsed ? "md:pl-14" : "md:pl-64"}>
         <header className="sticky top-0 z-30 backdrop-blur-md bg-vault-bg/85 border-b border-vault-hairline">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2 shrink-0 md:hidden">
@@ -575,9 +581,13 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
             </div>
             <ThemeToggle />
             {isEditorMode && (
-              <span className="shrink-0 hidden sm:inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-vault-hairline text-vault-fg-muted">
-                Editor
-              </span>
+              <button
+                onClick={() => setUploadOpen(true)}
+                className="shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md bg-vault-fg text-vault-bg text-xs font-medium hover:opacity-90"
+              >
+                <Upload size={14} weight="bold" />
+                <span className="hidden sm:inline">Upload a file</span>
+              </button>
             )}
           </div>
           {/* Mobile search */}
@@ -593,7 +603,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
         <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
           <FolderInfoBanner folderId={folderId} isEditorMode={isEditorMode} />
-          <GDriveSection currentFolderId={folderId} isEditorMode={isEditorMode} search={search} />
+
 
 
           {pendingMove && (
