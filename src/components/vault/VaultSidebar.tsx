@@ -6,6 +6,8 @@ import {
   Folder as FolderIcon,
   X as XIcon,
   List,
+  CaretRight,
+  CaretLeft,
 } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorites, useFavorites } from "@/lib/favorites";
@@ -20,11 +22,20 @@ interface Props {
   isEditorMode: boolean;
   currentFolderId: string | null;
   onNavigateFolder: (id: string | null) => void;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }
 
-export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }: Props) {
+export function VaultSidebar({
+  isEditorMode,
+  currentFolderId,
+  onNavigateFolder,
+  collapsed = false,
+  onToggleCollapsed,
+}: Props) {
   const [pinned, setPinned] = useState<PinnedFolder[]>([]);
   const [openMobile, setOpenMobile] = useState(false);
+  const [flyout, setFlyout] = useState(false);
   const favs = useFavorites();
 
   const refreshPinned = async () => {
@@ -60,6 +71,15 @@ export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }
         >
           <XIcon size={16} />
         </button>
+        {onToggleCollapsed && (
+          <button
+            onClick={onToggleCollapsed}
+            className="ml-auto hidden md:block p-1 rounded hover:bg-vault-overlay text-vault-fg-muted"
+            aria-label="Collapse sidebar"
+          >
+            <CaretLeft size={16} />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
@@ -110,6 +130,68 @@ export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }
     </div>
   );
 
+  const railBody = (
+    <div className="flex flex-col items-center h-full py-4 gap-2">
+      <button
+        onClick={onToggleCollapsed}
+        className="p-2 rounded-md hover:bg-vault-overlay text-vault-fg-muted"
+        aria-label="Expand sidebar"
+      >
+        <List size={16} />
+      </button>
+      <button
+        onClick={() => onNavigateFolder(null)}
+        className={`p-2 rounded-md hover:bg-vault-overlay ${currentFolderId === null ? "bg-vault-overlay-strong text-vault-fg" : "text-vault-fg/85"}`}
+        aria-label="Home"
+      >
+        <House size={16} />
+      </button>
+      <Link
+        to="/vault/favorites"
+        className="p-2 rounded-md hover:bg-vault-overlay text-vault-fg/85"
+        aria-label={`Favorites (${favs.length})`}
+      >
+        <Star size={16} />
+      </Link>
+
+      <div
+        className="relative"
+        onMouseEnter={() => setFlyout(true)}
+        onMouseLeave={() => setFlyout(false)}
+      >
+        <button
+          className={`p-2 rounded-md hover:bg-vault-overlay ${flyout ? "bg-vault-overlay-strong text-vault-fg" : "text-vault-fg/85"}`}
+          aria-label="Folders u should checkout"
+        >
+          <CaretRight size={16} />
+        </button>
+        {flyout && (
+          <div className="absolute left-full top-0 ml-1 w-56 rounded-lg bg-vault-menu-bg border border-vault-hairline shadow-2xl p-1.5 z-50">
+            <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-vault-fg-muted">
+              Folders u should checkout
+            </div>
+            {pinned.length === 0 ? (
+              <div className="px-2 py-1.5 text-[11px] text-vault-fg-muted">Nothing pinned yet</div>
+            ) : (
+              pinned.map((p) => (
+                <SidebarBtn
+                  key={p.id}
+                  icon={<FolderIcon size={15} weight="fill" className="text-vault-folder" />}
+                  label={p.name}
+                  active={currentFolderId === p.id}
+                  onClick={() => {
+                    onNavigateFolder(p.id);
+                    setFlyout(false);
+                  }}
+                />
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
       {/* Mobile trigger */}
@@ -122,8 +204,12 @@ export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }
       </button>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 z-30 bg-vault-menu-bg border-r border-vault-hairline">
-        {sidebarBody}
+      <aside
+        className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 z-30 bg-vault-menu-bg border-r border-vault-hairline transition-[width] ${
+          collapsed ? "md:w-14" : "md:w-64"
+        }`}
+      >
+        {collapsed ? railBody : sidebarBody}
       </aside>
 
       {/* Mobile drawer */}
@@ -138,6 +224,7 @@ export function VaultSidebar({ isEditorMode, currentFolderId, onNavigateFolder }
     </>
   );
 }
+
 
 function SidebarBtn({
   icon,
