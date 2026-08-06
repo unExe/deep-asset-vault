@@ -97,10 +97,16 @@ export async function listEmbeds(parentFolderId: string | null): Promise<GDriveE
   return (data as GDriveEmbed[] | null) ?? [];
 }
 
-export async function addEmbed(name: string, driveFolderId: string, parentFolderId: string | null) {
+export async function addEmbed(
+  name: string,
+  ref: string,
+  parentFolderId: string | null,
+  kind: EmbedKind = "folder",
+  fileType?: string,
+) {
   const { error } = await supabase
     .from("gdrive_embeds")
-    .insert({ name, drive_folder_id: driveFolderId, parent_folder_id: parentFolderId });
+    .insert({ name, drive_folder_id: encodeEmbedRef(kind, ref, fileType), parent_folder_id: parentFolderId });
   if (error) throw error;
 }
 
