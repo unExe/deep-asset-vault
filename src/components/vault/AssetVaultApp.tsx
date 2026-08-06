@@ -45,6 +45,8 @@ import {
   ArrowsOut,
   Star,
   PushPin,
+  Upload,
+  X as XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
@@ -75,6 +77,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [driveFolderOpen, setDriveFolderOpen] = useState<{ id: string; name: string } | null>(null);
   const [drivePreview, setDrivePreview] = useState<{ id: string; name: string } | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
@@ -663,6 +666,47 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
       {renderInfoDialog()}
 
+
+      {driveFolderOpen && (
+        <GDriveBrowser
+          rootId={driveFolderOpen.id}
+          rootName={driveFolderOpen.name}
+          onClose={() => setDriveFolderOpen(null)}
+        />
+      )}
+
+      {drivePreview && (
+        <div className="fixed inset-0 z-[65] bg-black/85 backdrop-blur-sm flex flex-col" onClick={() => setDrivePreview(null)}>
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-vault-hairline bg-vault-menu-bg" onClick={(e) => e.stopPropagation()}>
+            <span className="text-sm text-vault-fg truncate">{drivePreview.name}</span>
+            <button
+              onClick={() => setDrivePreview(null)}
+              className="ml-auto p-1.5 rounded hover:bg-vault-overlay-strong text-vault-fg"
+              aria-label="Close preview"
+            >
+              <XIcon size={16} />
+            </button>
+          </div>
+          <iframe
+            title={drivePreview.name}
+            src={drivePreviewUrl(drivePreview.id)}
+            className="flex-1 w-full bg-black"
+            onClick={(e) => e.stopPropagation()}
+            allow="autoplay"
+          />
+        </div>
+      )}
+
+      {uploadOpen && (
+        <UploadDialog
+          currentFolderId={folderId}
+          onDone={() => {
+            void refresh();
+            void refreshEmbeds();
+          }}
+          onClose={() => setUploadOpen(false)}
+        />
+      )}
 
       <UploadProgress />
     </div>
