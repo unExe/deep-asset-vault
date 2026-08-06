@@ -71,9 +71,56 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const [info, setInfo] = useState<InfoState | null>(null);
   const [pendingMove, setPendingMove] = useState<{ id: string; kind: "folder" | "asset" }[] | null>(null);
+  const [embeds, setEmbeds] = useState<GDriveEmbed[]>([]);
+  const [driveFolderOpen, setDriveFolderOpen] = useState<{ id: string; name: string } | null>(null);
+  const [drivePreview, setDrivePreview] = useState<{ id: string; name: string } | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
+
+  const refreshEmbeds = useCallback(async () => {
+    setEmbeds(await listEmbeds(folderId));
+  }, [folderId]);
+
+  useEffect(() => {
+    void refreshEmbeds();
+  }, [refreshEmbeds]);
+
+  const filteredEmbeds = useMemo(
+    () => (search ? embeds.filter((e) => e.name.toLowerCase().includes(search.toLowerCase())) : embeds),
+    [embeds, search],
+  );
+
+  const openEmbed = (em: GDriveEmbed) => {
+    const d = decodeEmbedRef(em.drive_folder_id);
+    if (d.kind === "folder") setDriveFolderOpen({ id: d.ref, name: em.name });
+    else if (d.kind === "file") setDrivePreview({ id: d.ref, name: em.name });
+    else window.open(d.ref, "_blank", "noopener,noreferrer");
+  };
+
+  const handleRenameEmbed = async (em: GDriveEmbed) => {
+    const next = prompt("New name?", em.name);
+    if (!next?.trim()) return;
+    try {
+      await renameEmbed(em.id, next.trim().slice(0, 120));
+      void refreshEmbeds();
+    } catch {
+      toast.error("Rename failed");
+    }
+  };
+
+  const handleRemoveEmbed = async (em: GDriveEmbed) => {
+    if (!confirm(`Remove "${em.name}"? The original stays untouched.`)) return;
+    try {
+      await removeEmbed(em.id);
+      toast.success("Removed");
+      void refreshEmbeds();
+    } catch {
+      toast.error("Remove failed");
+    }
+  };
+
 
   const navigate = useCallback(
     (id: string | null) => {
