@@ -1,13 +1,31 @@
 import { useRef, useState } from "react";
-import { Folder as FolderIcon, FileText, FilmSlate, Image as ImageIcon, MusicNote, Check, Info } from "@phosphor-icons/react";
+import {
+  Folder as FolderIcon,
+  FileText,
+  FilmSlate,
+  Image as ImageIcon,
+  MusicNote,
+  Check,
+  Info,
+  GoogleDriveLogo,
+  LinkSimple,
+  Trash,
+  PencilSimple,
+} from "@phosphor-icons/react";
 import { useVaultStore } from "@/lib/vault-store";
 import { getPublicUrl, type Asset, type Folder } from "@/hooks/useFileSystem";
+import { decodeEmbedRef, type GDriveEmbed } from "@/lib/gdrive";
 
 export interface DragItem { id: string; kind: "folder" | "asset" }
 
 interface Props {
   folders: Folder[];
   assets: Asset[];
+  /** Google Drive / link embeds, rendered inline with normal folders. */
+  embeds?: GDriveEmbed[];
+  onOpenEmbed?: (embed: GDriveEmbed) => void;
+  onRenameEmbed?: (embed: GDriveEmbed) => void;
+  onRemoveEmbed?: (embed: GDriveEmbed) => void;
   onOpenFolder: (id: string) => void;
   onOpenAsset: (asset: Asset) => void;
   onContextMenu: (e: React.MouseEvent, target: { id: string; kind: "folder" | "asset" }) => void;
@@ -23,6 +41,7 @@ interface Props {
   /** Editor-only: triggered after a 600ms left-mouse hold on a tile. */
   onLongPressMove?: (target: { id: string; kind: "folder" | "asset" }) => void;
 }
+
 
 function fileIcon(type: string | null) {
   if (!type) return FileText;
@@ -147,7 +166,12 @@ function useMouseLongPress(onLong: () => void, ms = 600, enabled = true) {
 export function FolderGrid({
   folders,
   assets,
+  embeds = [],
+  onOpenEmbed,
+  onRenameEmbed,
+  onRemoveEmbed,
   onOpenFolder,
+
   onOpenAsset,
   onContextMenu,
   onEmptyContextMenu,
@@ -233,7 +257,7 @@ export function FolderGrid({
   const infoAsset = assets.find((a) => a.is_info);
   const otherAssets = assets.filter((a) => !a.is_info);
 
-  if (folders.length === 0 && assets.length === 0) {
+  if (folders.length === 0 && assets.length === 0 && embeds.length === 0) {
     return (
       <div
         onClick={clear}
@@ -267,7 +291,19 @@ export function FolderGrid({
       )}
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2.5 sm:gap-3">
+        {embeds.map((em) => (
+          <EmbedTile
+            key={em.id}
+            embed={em}
+            isEditorMode={isEditorMode}
+            onOpen={() => onOpenEmbed?.(em)}
+            onRename={() => onRenameEmbed?.(em)}
+            onRemove={() => onRemoveEmbed?.(em)}
+          />
+        ))}
+
         {folders.map((f) => (
+
           <FolderTile
             key={f.id}
             folder={f}
@@ -434,6 +470,71 @@ function InfoTile({ asset: a, isSelected, isCut, onClick, onDoubleClick, onConte
         )}
         <div className="text-xs text-vault-fg-muted mt-0.5">Double-tap to read</div>
       </div>
+    </div>
+  );
+}
+
+/** Drive folder / Drive file / external-link tile — looks like a normal tile with a small badge. */
+function EmbedTile({
+  embed,
+  isEditorMode,
+  onOpen,
+  onRename,
+  onRemove,
+}: {
+  embed: GDriveEmbed;
+  isEditorMode: boolean;
+  onOpen: () => void;
+  onRename: () => void;
+  onRemove: () => void;
+}) {
+  const decoded = decodeEmbedRef(embed.drive_folder_id);
+  const isLink = decoded.kind === "link";
+  const isFile = decoded.kind === "file";
+  const Main = isFile ? fileIcon(decoded.fileType ?? null) : isLink ? LinkSimple : FolderIcon;
+
+  return (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen();
+      }}
+      onDoubleClick={(e) => e.stopPropagation()}
+      className="group relative flex flex-col items-center gap-2 p-3 sm:p-4 rounded-md bg-vault-overlay hover:bg-vault-overlay-strong border border-vault-hairline/50 transition-colors cursor-pointer select-none"
+    >
+      <span className="absolute top-1.5 right-1.5 z-10">
+        {isLink ? (
+          <LinkSimple size={13} className="text-vault-fg-muted" />
+        ) : (
+          <GoogleDriveLogo size={13} weight="fill" className="text-vault-accent" />
+        )}
+      </span>
+      <Main size={40} weight={isFile || isLink ? "light" : "fill"} className={isFile || isLink ? "text-vault-fg-muted" : "text-vault-folder"} />
+      <span className="block text-xs text-vault-fg truncate text-center w-full">{embed.name}</span>
+      {isEditorMode && (
+        <div className="absolute bottom-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100">
+          <button
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onRename();
+            }}
+            className="p-1 rounded bg-vault-menu-bg border border-vault-hairline text-vault-fg-muted"
+            aria-label="Rename embed"
+          >
+            <PencilSimple size={12} />
+          </button>
+          <button
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onRemove();
+            }}
+            className="p-1 rounded bg-vault-menu-bg border border-vault-hairline text-vault-danger"
+            aria-label="Remove embed"
+          >
+            <Trash size={12} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

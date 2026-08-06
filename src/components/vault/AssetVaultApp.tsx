@@ -11,7 +11,16 @@ import { AssetInfoDialog, FolderInfoDialog } from "@/components/vault/InfoDialog
 import { VaultSidebar, togglePinFolder } from "@/components/vault/VaultSidebar";
 import { CommentSection } from "@/components/vault/CommentSection";
 import { FolderInfoBanner } from "@/components/vault/FolderInfoEditor";
-import { GDriveSection } from "@/components/vault/GDriveSection";
+import { GDriveBrowser } from "@/components/vault/GDriveBrowser";
+import { UploadDialog } from "@/components/vault/UploadDialog";
+import {
+  decodeEmbedRef,
+  drivePreviewUrl,
+  listEmbeds,
+  removeEmbed,
+  renameEmbed,
+  type GDriveEmbed,
+} from "@/lib/gdrive";
 
 import { useFileSystem, type Asset } from "@/hooks/useFileSystem";
 import { useVaultStore } from "@/lib/vault-store";
@@ -36,6 +45,8 @@ import {
   ArrowsOut,
   Star,
   PushPin,
+  Upload,
+  X as XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
@@ -62,9 +73,57 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const [info, setInfo] = useState<InfoState | null>(null);
   const [pendingMove, setPendingMove] = useState<{ id: string; kind: "folder" | "asset" }[] | null>(null);
+  const [embeds, setEmbeds] = useState<GDriveEmbed[]>([]);
+  const [driveFolderOpen, setDriveFolderOpen] = useState<{ id: string; name: string } | null>(null);
+  const [drivePreview, setDrivePreview] = useState<{ id: string; name: string } | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
+
+  const refreshEmbeds = useCallback(async () => {
+    setEmbeds(await listEmbeds(folderId));
+  }, [folderId]);
+
+  useEffect(() => {
+    void refreshEmbeds();
+  }, [refreshEmbeds]);
+
+  const filteredEmbeds = useMemo(
+    () => (search ? embeds.filter((e) => e.name.toLowerCase().includes(search.toLowerCase())) : embeds),
+    [embeds, search],
+  );
+
+  const openEmbed = (em: GDriveEmbed) => {
+    const d = decodeEmbedRef(em.drive_folder_id);
+    if (d.kind === "folder") setDriveFolderOpen({ id: d.ref, name: em.name });
+    else if (d.kind === "file") setDrivePreview({ id: d.ref, name: em.name });
+    else window.open(d.ref, "_blank", "noopener,noreferrer");
+  };
+
+  const handleRenameEmbed = async (em: GDriveEmbed) => {
+    const next = prompt("New name?", em.name);
+    if (!next?.trim()) return;
+    try {
+      await renameEmbed(em.id, next.trim().slice(0, 120));
+      void refreshEmbeds();
+    } catch {
+      toast.error("Rename failed");
+    }
+  };
+
+  const handleRemoveEmbed = async (em: GDriveEmbed) => {
+    if (!confirm(`Remove "${em.name}"? The original stays untouched.`)) return;
+    try {
+      await removeEmbed(em.id);
+      toast.success("Removed");
+      void refreshEmbeds();
+    } catch {
+      toast.error("Remove failed");
+    }
+  };
+
 
   const navigate = useCallback(
     (id: string | null) => {
@@ -466,6 +525,10 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     <FolderGrid
       folders={filteredFolders}
       assets={filteredAssets}
+      embeds={filteredEmbeds}
+      onOpenEmbed={openEmbed}
+      onRenameEmbed={(em) => void handleRenameEmbed(em)}
+      onRemoveEmbed={(em) => void handleRemoveEmbed(em)}
       onOpenFolder={navigate}
       onOpenAsset={(a) => setPreviewQueue({ items: [a], start: 0 })}
       onContextMenu={openItemContext}
@@ -487,6 +550,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       <VaultSidebar
         isEditorMode={isEditorMode}
         currentFolderId={folderId}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
         onNavigateFolder={(id) => {
           // Navigate clearing history forward
           clear();
@@ -497,7 +562,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       />
 
 
-      <div className="md:pl-64">
+      <div className={sidebarCollapsed ? "md:pl-14" : "md:pl-64"}>
         <header className="sticky top-0 z-30 backdrop-blur-md bg-vault-bg/85 border-b border-vault-hairline">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2 shrink-0 md:hidden">
@@ -519,9 +584,13 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
             </div>
             <ThemeToggle />
             {isEditorMode && (
-              <span className="shrink-0 hidden sm:inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-vault-hairline text-vault-fg-muted">
-                Editor
-              </span>
+              <button
+                onClick={() => setUploadOpen(true)}
+                className="shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md bg-vault-fg text-vault-bg text-xs font-medium hover:opacity-90"
+              >
+                <Upload size={14} weight="bold" />
+                <span className="hidden sm:inline">Upload a file</span>
+              </button>
             )}
           </div>
           {/* Mobile search */}
@@ -537,7 +606,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
         <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
           <FolderInfoBanner folderId={folderId} isEditorMode={isEditorMode} />
-          <GDriveSection currentFolderId={folderId} isEditorMode={isEditorMode} search={search} />
+
 
 
           {pendingMove && (
@@ -597,6 +666,47 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
       {renderInfoDialog()}
 
+
+      {driveFolderOpen && (
+        <GDriveBrowser
+          rootId={driveFolderOpen.id}
+          rootName={driveFolderOpen.name}
+          onClose={() => setDriveFolderOpen(null)}
+        />
+      )}
+
+      {drivePreview && (
+        <div className="fixed inset-0 z-[65] bg-black/85 backdrop-blur-sm flex flex-col" onClick={() => setDrivePreview(null)}>
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-vault-hairline bg-vault-menu-bg" onClick={(e) => e.stopPropagation()}>
+            <span className="text-sm text-vault-fg truncate">{drivePreview.name}</span>
+            <button
+              onClick={() => setDrivePreview(null)}
+              className="ml-auto p-1.5 rounded hover:bg-vault-overlay-strong text-vault-fg"
+              aria-label="Close preview"
+            >
+              <XIcon size={16} />
+            </button>
+          </div>
+          <iframe
+            title={drivePreview.name}
+            src={drivePreviewUrl(drivePreview.id)}
+            className="flex-1 w-full bg-black"
+            onClick={(e) => e.stopPropagation()}
+            allow="autoplay"
+          />
+        </div>
+      )}
+
+      {uploadOpen && (
+        <UploadDialog
+          currentFolderId={folderId}
+          onDone={() => {
+            void refresh();
+            void refreshEmbeds();
+          }}
+          onClose={() => setUploadOpen(false)}
+        />
+      )}
 
       <UploadProgress />
     </div>
