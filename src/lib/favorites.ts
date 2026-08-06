@@ -52,8 +52,10 @@ export const Favorites = {
 };
 
 export function useFavorites() {
-  const [items, setItems] = useState<FavoriteEntry[]>(() => read());
+  // Start empty so SSR and the first client render match, then hydrate.
+  const [items, setItems] = useState<FavoriteEntry[]>([]);
   useEffect(() => {
+    setItems(read());
     const unsub = Favorites.subscribe(() => setItems(read()));
     return () => {
       unsub();
