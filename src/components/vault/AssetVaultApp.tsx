@@ -7,7 +7,7 @@ import { UploadDropZone, createInfoFile } from "@/components/vault/UploadDropZon
 import { UploadProgress } from "@/components/vault/UploadProgress";
 import { ContextMenu, type MenuItem } from "@/components/vault/ContextMenu";
 import { ThemeToggle } from "@/components/vault/ThemeToggle";
-import { AssetInfoDialog, FolderInfoDialog } from "@/components/vault/InfoDialog";
+import { AssetInfoDialog, FolderInfoDialog, InfoDialog } from "@/components/vault/InfoDialog";
 import { VaultSidebar, togglePinFolder } from "@/components/vault/VaultSidebar";
 import { CommentSection } from "@/components/vault/CommentSection";
 import { FolderInfoBanner } from "@/components/vault/FolderInfoEditor";
@@ -15,6 +15,7 @@ import { GDriveBrowser } from "@/components/vault/GDriveBrowser";
 import { UploadDialog } from "@/components/vault/UploadDialog";
 import {
   decodeEmbedRef,
+  driveFolderUrl,
   drivePreviewUrl,
   listEmbeds,
   removeEmbed,
@@ -46,6 +47,7 @@ import {
   Star,
   PushPin,
   Upload,
+  MagnifyingGlass,
   X as XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -77,6 +79,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [driveFolderOpen, setDriveFolderOpen] = useState<{ id: string; name: string } | null>(null);
   const [drivePreview, setDrivePreview] = useState<{ id: string; name: string } | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [embedInfo, setEmbedInfo] = useState<GDriveEmbed | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
@@ -529,6 +533,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       onOpenEmbed={openEmbed}
       onRenameEmbed={(em) => void handleRenameEmbed(em)}
       onRemoveEmbed={(em) => void handleRemoveEmbed(em)}
+      onEmbedInfo={(em) => setEmbedInfo(em)}
       onOpenFolder={navigate}
       onOpenAsset={(a) => setPreviewQueue({ items: [a], start: 0 })}
       onContextMenu={openItemContext}
@@ -582,6 +587,13 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
                 onSearchChange={setSearch}
               />
             </div>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="sm:hidden shrink-0 p-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg"
+              aria-label="Search"
+            >
+              <MagnifyingGlass size={15} />
+            </button>
             <ThemeToggle />
             {isEditorMode && (
               <button
@@ -592,15 +604,6 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
                 <span className="hidden sm:inline">Upload a file</span>
               </button>
             )}
-          </div>
-          {/* Mobile search */}
-          <div className="sm:hidden px-3 pb-2">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search this folder…"
-              className="w-full h-8 px-3 bg-vault-overlay border border-vault-hairline rounded-md text-xs text-vault-fg placeholder:text-vault-fg-muted outline-none"
-            />
           </div>
         </header>
 
@@ -708,6 +711,39 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
         />
       )}
 
+      {searchOpen && (
+        <div
+          className="sm:hidden fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-start justify-center p-4 pt-24"
+          onClick={() => setSearchOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-xl bg-vault-menu-bg border border-vault-hairline shadow-2xl p-3"
+          >
+            <div className="flex items-center gap-2">
+              <MagnifyingGlass size={15} className="text-vault-fg-muted shrink-0" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && setSearchOpen(false)}
+                placeholder="Search this folder…"
+                className="flex-1 min-w-0 h-9 bg-transparent outline-none text-sm text-vault-fg placeholder:text-vault-fg-muted"
+              />
+              <button
+                onClick={() => { setSearch(""); setSearchOpen(false); }}
+                className="shrink-0 p-1.5 rounded hover:bg-vault-overlay-strong text-vault-fg-muted"
+                aria-label="Close search"
+              >
+                <XIcon size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {embedInfo && <EmbedInfo embed={embedInfo} onClose={() => setEmbedInfo(null)} />}
+
       <UploadProgress />
     </div>
   );
@@ -733,6 +769,44 @@ function FolderInfo({ folderId, folderName, createdAt, onClose }: { folderId: st
       childFolders={counts?.folders ?? 0}
       childAssets={counts?.assets ?? 0}
       onClose={onClose}
+    />
+  );
+}
+
+
+/** Info dialog for Google Drive / link embeds. */
+function EmbedInfo({ embed, onClose }: { embed: GDriveEmbed; onClose: () => void }) {
+  const decoded = decodeEmbedRef(embed.drive_folder_id);
+  const url =
+    decoded.kind === "link"
+      ? decoded.ref
+      : decoded.kind === "file"
+      ? drivePreviewUrl(decoded.ref)
+      : driveFolderUrl(decoded.ref);
+  const kindLabel =
+    decoded.kind === "link" ? "External link" : decoded.kind === "file" ? "Google Drive file" : "Google Drive folder";
+  return (
+    <InfoDialog
+      title={decoded.kind === "folder" ? "Folder info" : "Item info"}
+      onClose={onClose}
+      rows={[
+        { label: "Name", value: embed.name },
+        { label: "Type", value: kindLabel },
+        ...(decoded.fileType ? [{ label: "File type", value: decoded.fileType }] : []),
+        { label: "Date added", value: embed.created_at ? new Date(embed.created_at).toLocaleString() : "—" },
+        ...(decoded.kind === "link"
+          ? []
+          : [{ label: "Drive ID", value: <span className="font-mono text-[10px]">{decoded.ref}</span> }]),
+        {
+          label: "Link",
+          value: (
+            <a href={url} target="_blank" rel="noreferrer" className="text-vault-accent underline break-all">
+              {url}
+            </a>
+          ),
+        },
+        { label: "Storage", value: "Not stored in the vault — linked live" },
+      ]}
     />
   );
 }
