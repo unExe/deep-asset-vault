@@ -534,7 +534,6 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       onRenameEmbed={(em) => void handleRenameEmbed(em)}
       onRemoveEmbed={(em) => void handleRemoveEmbed(em)}
       onEmbedInfo={(em) => setEmbedInfo(em)}
-      onEmbedInfo={(em) => setEmbedInfo(em)}
       onOpenFolder={navigate}
       onOpenAsset={(a) => setPreviewQueue({ items: [a], start: 0 })}
       onContextMenu={openItemContext}
