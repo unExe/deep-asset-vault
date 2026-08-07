@@ -55,8 +55,13 @@ export function VaultSidebar({
   // Also expose a refresh listener for pinned via window event
   useEffect(() => {
     const onPinChange = () => void refreshPinned();
+    const onOpen = () => setOpenMobile(true);
     window.addEventListener("vault:pinned-changed", onPinChange);
-    return () => window.removeEventListener("vault:pinned-changed", onPinChange);
+    window.addEventListener("vault:open-sidebar", onOpen);
+    return () => {
+      window.removeEventListener("vault:pinned-changed", onPinChange);
+      window.removeEventListener("vault:open-sidebar", onOpen);
+    };
   }, []);
 
   const sidebarBody = (
