@@ -84,6 +84,15 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [embedInfo, setEmbedInfo] = useState<GDriveEmbed | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Desktop (>=1024px) expanded, tablet (768-1023px) collapsed.
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const apply = () => setSidebarCollapsed(mql.matches);
+    apply();
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
+  }, []);
+
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
 
