@@ -28,6 +28,8 @@ export function PathBar({
   onRefresh,
   search,
   onSearchChange,
+  leading,
+  actions,
 }: Props) {
   const [trail, setTrail] = useState<Folder[]>([]);
   const [editing, setEditing] = useState(false);
