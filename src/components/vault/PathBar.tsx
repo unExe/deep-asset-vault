@@ -85,7 +85,11 @@ export function PathBar({
         >
           <ArrowUp size={16} />
         </button>
+        {actions && (
+          <div className="ml-auto flex items-center gap-1.5 sm:hidden">{actions}</div>
+        )}
       </div>
+
 
       {/* Path */}
       <div className="flex-1 min-w-0 h-8 bg-vault-overlay hover:bg-vault-overlay-strong border border-vault-hairline rounded-md flex items-center px-2">
