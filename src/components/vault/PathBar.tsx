@@ -107,7 +107,7 @@ export function PathBar({
         ) : (
           <div
             onClick={() => setEditing(true)}
-            className="flex items-center gap-0.5 text-sm text-vault-fg-muted overflow-x-auto whitespace-nowrap flex-1 cursor-text"
+            className="flex items-center gap-0.5 text-sm text-vault-fg-muted overflow-x-auto no-scrollbar whitespace-nowrap flex-1 cursor-text"
           >
             <button
               onClick={(e) => {
