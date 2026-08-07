@@ -57,9 +57,10 @@ export function PathBar({
   };
 
   return (
-    <div className="flex items-center gap-2 w-full">
+    <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center">
       {/* Nav arrows */}
-      <div className="flex items-center gap-0.5 shrink-0">
+      <div className="flex items-center gap-0.5 sm:shrink-0">
+        {leading}
         <button
           onClick={onBack}
           disabled={!canBack}
