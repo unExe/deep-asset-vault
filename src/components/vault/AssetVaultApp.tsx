@@ -48,6 +48,7 @@ import {
   PushPin,
   Upload,
   MagnifyingGlass,
+  List,
   X as XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -82,6 +83,15 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [embedInfo, setEmbedInfo] = useState<GDriveEmbed | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Desktop (>=1024px) expanded, tablet (768-1023px) collapsed.
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const apply = () => setSidebarCollapsed(mql.matches);
+    apply();
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
+  }, []);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
   const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
@@ -569,43 +579,51 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
       <div className={sidebarCollapsed ? "md:pl-14" : "md:pl-64"}>
         <header className="sticky top-0 z-30 backdrop-blur-md bg-vault-bg/85 border-b border-vault-hairline">
-          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 shrink-0 md:hidden">
-              <div className="w-2 h-2 rounded-full bg-vault-fg" />
-              <span className="font-medium tracking-tight text-sm hidden sm:inline">vault.unExe</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <PathBar
-                folderId={folderId}
-                onNavigate={navigate}
-                onBack={goBack}
-                onForward={goForward}
-                canBack={histIdx > 0}
-                canForward={histIdx < history.length - 1}
-                onRefresh={() => void refresh()}
-                search={search}
-                onSearchChange={setSearch}
-              />
-            </div>
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="sm:hidden shrink-0 p-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg"
-              aria-label="Search"
-            >
-              <MagnifyingGlass size={15} />
-            </button>
-            <ThemeToggle />
-            {isEditorMode && (
-              <button
-                onClick={() => setUploadOpen(true)}
-                className="shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md bg-vault-fg text-vault-bg text-xs font-medium hover:opacity-90"
-              >
-                <Upload size={14} weight="bold" />
-                <span className="hidden sm:inline">Upload a file</span>
-              </button>
-            )}
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5">
+            <PathBar
+              folderId={folderId}
+              onNavigate={navigate}
+              onBack={goBack}
+              onForward={goForward}
+              canBack={histIdx > 0}
+              canForward={histIdx < history.length - 1}
+              onRefresh={() => void refresh()}
+              search={search}
+              onSearchChange={setSearch}
+              leading={
+                <button
+                  onClick={() => window.dispatchEvent(new Event("vault:open-sidebar"))}
+                  className="md:hidden p-1.5 rounded hover:bg-vault-overlay-strong text-vault-fg"
+                  aria-label="Open sidebar"
+                >
+                  <List size={17} />
+                </button>
+              }
+              actions={
+                <>
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    className="sm:hidden shrink-0 p-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg"
+                    aria-label="Search"
+                  >
+                    <MagnifyingGlass size={15} />
+                  </button>
+                  <ThemeToggle />
+                  {isEditorMode && (
+                    <button
+                      onClick={() => setUploadOpen(true)}
+                      className="shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md bg-vault-fg text-vault-bg text-xs font-medium hover:opacity-90"
+                    >
+                      <Upload size={14} weight="bold" />
+                      <span className="hidden sm:inline">Upload a file</span>
+                    </button>
+                  )}
+                </>
+              }
+            />
           </div>
         </header>
+
 
         <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28">
           <FolderInfoBanner folderId={folderId} isEditorMode={isEditorMode} />

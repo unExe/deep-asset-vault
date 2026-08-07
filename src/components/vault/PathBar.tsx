@@ -12,6 +12,10 @@ interface Props {
   onRefresh: () => void;
   search: string;
   onSearchChange: (s: string) => void;
+  /** Rendered before the nav arrows (e.g. mobile menu button). */
+  leading?: React.ReactNode;
+  /** Header actions: top-right on mobile, inline on desktop. */
+  actions?: React.ReactNode;
 }
 
 export function PathBar({
@@ -24,6 +28,8 @@ export function PathBar({
   onRefresh,
   search,
   onSearchChange,
+  leading,
+  actions,
 }: Props) {
   const [trail, setTrail] = useState<Folder[]>([]);
   const [editing, setEditing] = useState(false);
@@ -51,9 +57,10 @@ export function PathBar({
   };
 
   return (
-    <div className="flex items-center gap-2 w-full">
+    <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center">
       {/* Nav arrows */}
-      <div className="flex items-center gap-0.5 shrink-0">
+      <div className="flex items-center gap-0.5 sm:shrink-0">
+        {leading}
         <button
           onClick={onBack}
           disabled={!canBack}
@@ -78,7 +85,11 @@ export function PathBar({
         >
           <ArrowUp size={16} />
         </button>
+        {actions && (
+          <div className="ml-auto flex items-center gap-1.5 sm:hidden">{actions}</div>
+        )}
       </div>
+
 
       {/* Path */}
       <div className="flex-1 min-w-0 h-8 bg-vault-overlay hover:bg-vault-overlay-strong border border-vault-hairline rounded-md flex items-center px-2">
@@ -96,7 +107,7 @@ export function PathBar({
         ) : (
           <div
             onClick={() => setEditing(true)}
-            className="flex items-center gap-0.5 text-sm text-vault-fg-muted overflow-x-auto whitespace-nowrap flex-1 cursor-text"
+            className="flex items-center gap-0.5 text-sm text-vault-fg-muted overflow-x-auto no-scrollbar whitespace-nowrap flex-1 cursor-text"
           >
             <button
               onClick={(e) => {
@@ -143,6 +154,8 @@ export function PathBar({
           className="flex-1 bg-transparent outline-none text-xs text-vault-fg placeholder:text-vault-fg-muted"
         />
       </div>
+
+      {actions && <div className="hidden sm:flex items-center gap-2 shrink-0">{actions}</div>}
     </div>
   );
 }
