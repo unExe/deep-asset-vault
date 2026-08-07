@@ -26,6 +26,7 @@ interface Props {
   onOpenEmbed?: (embed: GDriveEmbed) => void;
   onRenameEmbed?: (embed: GDriveEmbed) => void;
   onRemoveEmbed?: (embed: GDriveEmbed) => void;
+  onEmbedInfo?: (embed: GDriveEmbed) => void;
   onOpenFolder: (id: string) => void;
   onOpenAsset: (asset: Asset) => void;
   onContextMenu: (e: React.MouseEvent, target: { id: string; kind: "folder" | "asset" }) => void;
@@ -170,6 +171,7 @@ export function FolderGrid({
   onOpenEmbed,
   onRenameEmbed,
   onRemoveEmbed,
+  onEmbedInfo,
   onOpenFolder,
 
   onOpenAsset,
@@ -299,6 +301,7 @@ export function FolderGrid({
             onOpen={() => onOpenEmbed?.(em)}
             onRename={() => onRenameEmbed?.(em)}
             onRemove={() => onRemoveEmbed?.(em)}
+            onInfo={() => onEmbedInfo?.(em)}
           />
         ))}
 
@@ -481,12 +484,14 @@ function EmbedTile({
   onOpen,
   onRename,
   onRemove,
+  onInfo,
 }: {
   embed: GDriveEmbed;
   isEditorMode: boolean;
   onOpen: () => void;
   onRename: () => void;
   onRemove: () => void;
+  onInfo: () => void;
 }) {
   const decoded = decodeEmbedRef(embed.drive_folder_id);
   const isLink = decoded.kind === "link";
@@ -511,6 +516,18 @@ function EmbedTile({
       </span>
       <Main size={40} weight={isFile || isLink ? "light" : "fill"} className={isFile || isLink ? "text-vault-fg-muted" : "text-vault-folder"} />
       <span className="block text-xs text-vault-fg truncate text-center w-full">{embed.name}</span>
+      <div className="absolute bottom-1.5 left-1.5 opacity-0 group-hover:opacity-100">
+        <button
+          onClick={(ev) => {
+            ev.stopPropagation();
+            onInfo();
+          }}
+          className="p-1 rounded bg-vault-menu-bg border border-vault-hairline text-vault-fg-muted"
+          aria-label="Embed info"
+        >
+          <Info size={12} />
+        </button>
+      </div>
       {isEditorMode && (
         <div className="absolute bottom-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100">
           <button

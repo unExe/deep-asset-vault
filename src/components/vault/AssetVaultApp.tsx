@@ -7,7 +7,7 @@ import { UploadDropZone, createInfoFile } from "@/components/vault/UploadDropZon
 import { UploadProgress } from "@/components/vault/UploadProgress";
 import { ContextMenu, type MenuItem } from "@/components/vault/ContextMenu";
 import { ThemeToggle } from "@/components/vault/ThemeToggle";
-import { AssetInfoDialog, FolderInfoDialog } from "@/components/vault/InfoDialog";
+import { AssetInfoDialog, FolderInfoDialog, InfoDialog } from "@/components/vault/InfoDialog";
 import { VaultSidebar, togglePinFolder } from "@/components/vault/VaultSidebar";
 import { CommentSection } from "@/components/vault/CommentSection";
 import { FolderInfoBanner } from "@/components/vault/FolderInfoEditor";
@@ -15,6 +15,7 @@ import { GDriveBrowser } from "@/components/vault/GDriveBrowser";
 import { UploadDialog } from "@/components/vault/UploadDialog";
 import {
   decodeEmbedRef,
+  driveFolderUrl,
   drivePreviewUrl,
   listEmbeds,
   removeEmbed,
@@ -46,6 +47,7 @@ import {
   Star,
   PushPin,
   Upload,
+  MagnifyingGlass,
   X as XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -77,6 +79,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [driveFolderOpen, setDriveFolderOpen] = useState<{ id: string; name: string } | null>(null);
   const [drivePreview, setDrivePreview] = useState<{ id: string; name: string } | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [embedInfo, setEmbedInfo] = useState<GDriveEmbed | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
@@ -529,6 +533,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
       onOpenEmbed={openEmbed}
       onRenameEmbed={(em) => void handleRenameEmbed(em)}
       onRemoveEmbed={(em) => void handleRemoveEmbed(em)}
+      onEmbedInfo={(em) => setEmbedInfo(em)}
       onOpenFolder={navigate}
       onOpenAsset={(a) => setPreviewQueue({ items: [a], start: 0 })}
       onContextMenu={openItemContext}
@@ -582,6 +587,13 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
                 onSearchChange={setSearch}
               />
             </div>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="sm:hidden shrink-0 p-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg"
+              aria-label="Search"
+            >
+              <MagnifyingGlass size={15} />
+            </button>
             <ThemeToggle />
             {isEditorMode && (
               <button
@@ -592,15 +604,6 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
                 <span className="hidden sm:inline">Upload a file</span>
               </button>
             )}
-          </div>
-          {/* Mobile search */}
-          <div className="sm:hidden px-3 pb-2">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search this folder…"
-              className="w-full h-8 px-3 bg-vault-overlay border border-vault-hairline rounded-md text-xs text-vault-fg placeholder:text-vault-fg-muted outline-none"
-            />
           </div>
         </header>
 
