@@ -154,6 +154,8 @@ export function PathBar({
           className="flex-1 bg-transparent outline-none text-xs text-vault-fg placeholder:text-vault-fg-muted"
         />
       </div>
+
+      {actions && <div className="hidden sm:flex items-center gap-2 shrink-0">{actions}</div>}
     </div>
   );
 }
