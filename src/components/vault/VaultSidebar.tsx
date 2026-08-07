@@ -199,14 +199,9 @@ export function VaultSidebar({
 
   return (
     <>
-      {/* Mobile trigger */}
-      <button
-        onClick={() => setOpenMobile(true)}
-        className="md:hidden fixed bottom-20 left-3 z-40 p-2.5 rounded-full bg-vault-menu-bg border border-vault-hairline shadow-xl text-vault-fg"
-        aria-label="Open sidebar"
-      >
-        <List size={18} />
-      </button>
+      {/* Mobile trigger lives in the header (vault:open-sidebar event) */}
+
+
 
       {/* Desktop sidebar */}
       <aside
