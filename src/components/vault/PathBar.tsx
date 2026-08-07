@@ -12,6 +12,10 @@ interface Props {
   onRefresh: () => void;
   search: string;
   onSearchChange: (s: string) => void;
+  /** Rendered before the nav arrows (e.g. mobile menu button). */
+  leading?: React.ReactNode;
+  /** Header actions: top-right on mobile, inline on desktop. */
+  actions?: React.ReactNode;
 }
 
 export function PathBar({
