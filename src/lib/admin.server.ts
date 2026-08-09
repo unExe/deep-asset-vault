@@ -53,7 +53,7 @@ const WRITABLE: Record<string, string[]> = {
   folder_comments: [], // delete-only for admins
 };
 
-export function assertTable(table: string): asserts table is keyof typeof WRITABLE {
+export function assertTable(table: string): void {
   if (!Object.prototype.hasOwnProperty.call(WRITABLE, table)) {
     throw new Error('Unsupported table');
   }
