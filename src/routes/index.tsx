@@ -111,6 +111,9 @@ function HomePage() {
               src={logo}
               alt=".unExe logo"
               className="w-7 h-7 rounded-md object-cover"
+              width={28}
+              height={28}
+              decoding="async"
               whileHover={{ rotate: -6, scale: 1.1 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}
             />
@@ -174,6 +177,10 @@ function HomePage() {
                 alt=".unExe — official logo"
                 className="w-full h-full object-cover"
                 loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                width={256}
+                height={256}
                 animate={reduce ? undefined : { y: [0, -4, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
               />
