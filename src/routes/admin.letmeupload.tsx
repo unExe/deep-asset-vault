@@ -2,9 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { AssetVaultApp } from "@/components/vault/AssetVaultApp";
 import { LockKey } from "@phosphor-icons/react";
+import { adminSignIn, isAdminUnlocked } from "@/lib/admin-api";
 
-const ADMIN_PASSWORD = "letmeupload";
-const STORAGE_KEY = "assetvault_admin_unlocked";
 
 export const Route = createFileRoute("/admin/letmeupload")({
   component: AdminGate,
@@ -18,15 +17,15 @@ function AdminGate() {
 
   useEffect(() => {
     setMounted(true);
-    if (sessionStorage.getItem(STORAGE_KEY) === "1") setUnlocked(true);
+    if (isAdminUnlocked()) setUnlocked(true);
   }, []);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (pw === ADMIN_PASSWORD) {
-      sessionStorage.setItem(STORAGE_KEY, "1");
+    try {
+      await adminSignIn(pw);
       setUnlocked(true);
-    } else {
+    } catch {
       setErr(true);
     }
   };
@@ -40,7 +39,7 @@ function AdminGate() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white p-6">
       <form
-        onSubmit={submit}
+        onSubmit={(e) => void submit(e)}
         className="w-full max-w-sm bg-white/[0.03] border border-white/10 rounded-xl p-8"
       >
         <div className="flex flex-col items-center gap-3 mb-6">
