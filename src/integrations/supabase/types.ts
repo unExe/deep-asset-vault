@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_credentials: {
+        Row: {
+          id: number
+          password_hash: string
+          pet_answer_hash: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          password_hash: string
+          pet_answer_hash: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          password_hash?: string
+          pet_answer_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       asset_events: {
         Row: {
           asset_id: string
@@ -234,6 +255,48 @@ export type Database = {
           id?: string
           position?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          path: string
+          referrer: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path: string
+          referrer?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string
+          referrer?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
         }
         Relationships: []
       }

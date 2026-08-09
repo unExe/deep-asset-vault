@@ -7,6 +7,11 @@ import {
   adminRemoveFiles,
   adminSignedUpload,
   adminUpdate,
+  adminAnalytics,
+  adminChangePassword,
+  adminChangePetAnswer,
+  adminResetPasswordWithPet,
+  adminSetSetting,
 } from "@/lib/admin.functions";
 
 const TOKEN_KEY = "vault_admin_token";
@@ -79,4 +84,26 @@ export async function aUploadFile(path: string, body: Blob | File, contentType?:
 export async function aRemoveFiles(paths: string[]) {
   if (paths.length === 0) return;
   await adminRemoveFiles({ data: { token: requireToken(), paths } });
+}
+
+export async function aSetSetting(key: "hero" | "socials", value: unknown) {
+  await adminSetSetting({ data: { token: requireToken(), key, value } });
+}
+
+export async function aAnalytics(days = 30) {
+  return adminAnalytics({ data: { token: requireToken(), days } });
+}
+
+export async function aChangePassword(currentPassword: string, newPassword: string) {
+  const { token } = await adminChangePassword({ data: { currentPassword, newPassword } });
+  sessionStorage.setItem(TOKEN_KEY, token);
+}
+
+export async function aResetPasswordWithPet(petAnswer: string, newPassword: string) {
+  const { token } = await adminResetPasswordWithPet({ data: { petAnswer, newPassword } });
+  sessionStorage.setItem(TOKEN_KEY, token);
+}
+
+export async function aChangePetAnswer(currentPassword: string, petAnswer: string) {
+  await adminChangePetAnswer({ data: { currentPassword, petAnswer } });
 }

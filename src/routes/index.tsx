@@ -15,10 +15,17 @@ import {
   Headphones,
 } from "@phosphor-icons/react";
 import { LazyMotion, domAnimation, m, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/vault/ThemeToggle";
 import { CursorGlow } from "@/components/home/CursorGlow";
 import logo from "@/assets/logo-256.webp";
+import {
+  DEFAULT_HERO,
+  DEFAULT_SOCIALS,
+  fetchSiteSettings,
+  type HeroSettings,
+  type SocialLink,
+} from "@/lib/site-settings";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -88,8 +95,24 @@ function Reveal({
   );
 }
 
+function socialIcon(icon: string) {
+  if (icon === "youtube") return <YoutubeLogo size={18} weight="fill" />;
+  if (icon === "telegram") return <TelegramLogo size={18} weight="fill" />;
+  return <ShareNetwork size={18} />;
+}
+
 function HomePage() {
   const reduce = useReducedMotion();
+  const [hero, setHero] = useState<HeroSettings>(DEFAULT_HERO);
+  const [socials, setSocials] = useState<SocialLink[]>(DEFAULT_SOCIALS);
+
+  useEffect(() => {
+    void fetchSiteSettings().then((s) => {
+      setHero(s.hero);
+      setSocials(s.socials);
+    });
+  }, []);
+
   const heroRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 90]);
@@ -122,8 +145,9 @@ function HomePage() {
             <span className="font-semibold tracking-tight text-sm text-vault-fg">.unExe</span>
           </div>
           <nav className="flex items-center gap-1">
-            <a href={YT_URL} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-vault-fg-muted hover:text-vault-fg transition-colors">YouTube</a>
-            <a href={TG_URL} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-vault-fg-muted hover:text-vault-fg transition-colors">Telegram</a>
+            {socials.map((s) => (
+              <a key={s.id} href={s.url} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-vault-fg-muted hover:text-vault-fg transition-colors">{s.label}</a>
+            ))}
             <m.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
               <Link to="/vault" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-vault-overlay-strong hover:bg-vault-card-hover text-xs text-vault-fg border border-vault-hairline">
                 <Vault size={13} /> Vault
@@ -164,7 +188,7 @@ function HomePage() {
                 >
                   <Lightning size={10} weight="fill" />
                 </m.span>
-                short-form · creator
+                {hero.badge}
               </span>
             </m.div>
 
@@ -175,8 +199,8 @@ function HomePage() {
               className="w-24 h-24 mb-10 rounded-2xl overflow-hidden border border-vault-hairline shadow-[0_0_50px_color-mix(in_oklab,var(--vault-fg)_12%,transparent)]"
             >
               <m.img
-                src={logo}
-                alt=".unExe — official logo"
+                src={hero.avatarUrl || logo}
+                alt=".unExe — profile"
                 className="w-full h-full object-cover"
                 loading="eager"
                 decoding="async"
@@ -189,11 +213,11 @@ function HomePage() {
             </m.div>
 
             <m.h1 variants={rise} className="text-5xl md:text-7xl font-bold text-vault-fg tracking-tighter mb-6">
-              The Vault<span className="text-vault-fg-muted">.unExe</span>
+              {hero.title}<span className="text-vault-fg-muted">{hero.titleAccent}</span>
             </m.h1>
 
             <m.p variants={rise} className="max-w-lg text-lg leading-relaxed mb-10">
-              I make short-form content. Every asset I use — overlays, sounds, presets, project files — lives here. Preview anything, download what you need.
+              {hero.subtitle}
             </m.p>
 
             <m.div variants={rise} className="flex flex-wrap justify-center gap-3">
@@ -203,7 +227,7 @@ function HomePage() {
                 </Link>
               </m.div>
               <m.a
-                href={YT_URL}
+                href={socials[0]?.url ?? YT_URL}
                 target="_blank"
                 rel="noreferrer"
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -277,8 +301,9 @@ function HomePage() {
           <Reveal delay={0.12} className="flex flex-col justify-center">
             <span className="font-mono text-[10px] tracking-widest text-vault-fg-muted uppercase mb-6 block">Connect</span>
             <div className="flex flex-col gap-4">
-              <ConnectRow href={YT_URL} icon={<YoutubeLogo size={18} weight="fill" />} label="YouTube" handle="/ @unexecutable" />
-              <ConnectRow href={TG_URL} icon={<TelegramLogo size={18} weight="fill" />} label="Telegram" handle="/ join the channel" />
+              {socials.map((s) => (
+                <ConnectRow key={s.id} href={s.url} icon={socialIcon(s.icon)} label={s.label} handle={s.handle} />
+              ))}
             </div>
             <div className="mt-6 grid grid-cols-2 gap-3">
               <MiniCard icon={<PlayCircle size={18} weight="fill" />} title="Short-form first" desc="Vertical edits for Shorts, Reels, TikTok." />

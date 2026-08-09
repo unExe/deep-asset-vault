@@ -1,6 +1,8 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/theme";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+
 
 import appCss from "../styles.css?url";
 
@@ -68,8 +70,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <ThemeProvider>
+      <AnalyticsTracker />
       <Outlet />
       <Toaster />
     </ThemeProvider>
   );
 }
+
