@@ -68,8 +68,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <ThemeProvider>
+      <AnalyticsTracker />
       <Outlet />
       <Toaster />
     </ThemeProvider>
   );
 }
+
