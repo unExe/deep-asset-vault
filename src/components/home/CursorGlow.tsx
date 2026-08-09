@@ -35,13 +35,19 @@ export function CursorGlow() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[5] transition-opacity duration-500"
-      style={{
-        opacity: pos ? 1 : 0,
-        background: pos
-          ? `radial-gradient(420px circle at ${pos.x}px ${pos.y}px, color-mix(in oklab, var(--color-vault-fg) 10%, transparent), transparent 70%)`
-          : undefined,
-      }}
-    />
+      className="pointer-events-none fixed inset-0 z-[5] overflow-hidden transition-opacity duration-500"
+      style={{ opacity: pos ? 1 : 0 }}
+    >
+      <div
+        className="pointer-events-none absolute h-[840px] w-[840px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-transform duration-500 ease-out will-change-transform"
+        style={{
+          transform: pos
+            ? `translate(${pos.x}px, ${pos.y}px)`
+            : "translate(-50%, -50%)",
+          background:
+            "radial-gradient(closest-side, color-mix(in oklab, var(--color-vault-fg) 10%, transparent), transparent 70%)",
+        }}
+      />
+    </div>
   );
 }
