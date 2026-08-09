@@ -52,6 +52,7 @@ import {
   X as XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { aDelete, aInsert, aRemoveFiles } from "@/lib/admin-api";
 
 interface CtxState {
   x: number;
@@ -211,11 +212,11 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     setBusy(true);
     try {
       if (selectedAssets.length) {
-        await supabase.storage.from("assets").remove(selectedAssets.map((a) => a.storage_path));
-        await supabase.from("assets").delete().in("id", selectedAssets.map((a) => a.id));
+        await aRemoveFiles(selectedAssets.map((a) => a.storage_path));
+        await aDelete("assets", selectedAssets.map((a) => a.id));
       }
       if (selectedFolderIds.length) {
-        await supabase.from("folders").delete().in("id", selectedFolderIds);
+        await aDelete("folders", selectedFolderIds);
       }
       toast.success("Deleted");
       clear();
@@ -285,16 +286,14 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const handleNewFolder = async () => {
     const name = prompt("Folder name?");
     if (!name) return;
-    const { data, error } = await supabase
-      .from("folders")
-      .insert({ name, parent_id: folderId })
-      .select("id")
-      .single();
-    if (error || !data) {
-      toast.error(error?.message ?? "Create failed");
+    let newId: string;
+    try {
+      [newId] = await aInsert("folders", [{ name, parent_id: folderId }]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Create failed");
       return;
     }
-    await createInfoFile((data as { id: string }).id, name);
+    await createInfoFile(newId, name);
     toast.success("Folder created");
     void refresh();
   };

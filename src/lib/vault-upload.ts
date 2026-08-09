@@ -1,5 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
 import { ensureFolder } from "@/hooks/useFileSystem";
+import { aInsert, aUploadFile } from "@/lib/admin-api";
 
 export interface UploadOverrides {
   /** Override the stored display name (only sensible for single-file uploads). */
@@ -11,16 +11,14 @@ export interface UploadOverrides {
 export async function uploadOne(file: File, folderId: string | null, overrides: UploadOverrides = {}) {
   const displayName = overrides.name?.trim() || file.name;
   const path = `${folderId ?? "root"}/${crypto.randomUUID()}-${displayName}`;
-  const { error: upErr } = await supabase.storage.from("assets").upload(path, file);
-  if (upErr) throw upErr;
-  const { error: insErr } = await supabase.from("assets").insert({
+  await aUploadFile(path, file, overrides.fileType?.trim() || file.type || undefined);
+  await aInsert("assets", [{
     name: displayName,
     storage_path: path,
     folder_id: folderId,
     file_type: overrides.fileType?.trim() || file.type || null,
     size_bytes: file.size,
-  });
-  if (insErr) throw insErr;
+  }]);
 }
 
 export async function uploadFromRelativePath(

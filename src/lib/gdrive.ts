@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { aDelete, aInsert, aUpdate } from "@/lib/admin-api";
 
 export type EmbedKind = "folder" | "file" | "link";
 
@@ -104,18 +105,15 @@ export async function addEmbed(
   kind: EmbedKind = "folder",
   fileType?: string,
 ) {
-  const { error } = await supabase
-    .from("gdrive_embeds")
-    .insert({ name, drive_folder_id: encodeEmbedRef(kind, ref, fileType), parent_folder_id: parentFolderId });
-  if (error) throw error;
+  await aInsert("gdrive_embeds", [
+    { name, drive_folder_id: encodeEmbedRef(kind, ref, fileType), parent_folder_id: parentFolderId },
+  ]);
 }
 
 export async function removeEmbed(id: string) {
-  const { error } = await supabase.from("gdrive_embeds").delete().eq("id", id);
-  if (error) throw error;
+  await aDelete("gdrive_embeds", [id]);
 }
 
 export async function renameEmbed(id: string, name: string) {
-  const { error } = await supabase.from("gdrive_embeds").update({ name }).eq("id", id);
-  if (error) throw error;
+  await aUpdate("gdrive_embeds", id, { name });
 }

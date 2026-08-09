@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ChatCircle, Trash } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { aDelete } from "@/lib/admin-api";
 
 interface Comment {
   id: string;
@@ -84,7 +85,12 @@ export function CommentSection({ folderId, isEditorMode }: Props) {
 
   const del = async (id: string) => {
     if (!confirm("Delete this comment?")) return;
-    await supabase.from("folder_comments").delete().eq("id", id);
+    try {
+      await aDelete("folder_comments", [id]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+      return;
+    }
     void refresh();
   };
 

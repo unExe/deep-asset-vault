@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { aInsert } from "@/lib/admin-api";
 
 export interface Folder {
   id: string;
@@ -91,11 +92,7 @@ export async function ensureFolder(name: string, parentId: string | null): Promi
   const { data } = parentId === null ? await q.is("parent_id", null) : await q.eq("parent_id", parentId);
   const existing = (data as { id: string }[] | null) ?? [];
   if (existing.length) return existing[0].id;
-  const { data: ins, error } = await supabase
-    .from("folders")
-    .insert({ name, parent_id: parentId })
-    .select("id")
-    .single();
-  if (error || !ins) throw error ?? new Error("create folder failed");
-  return (ins as { id: string }).id;
+  const [id] = await aInsert("folders", [{ name, parent_id: parentId }]);
+  if (!id) throw new Error("create folder failed");
+  return id;
 }
