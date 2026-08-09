@@ -17,6 +17,7 @@ import {
 import { LazyMotion, domAnimation, m, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react";
 import { useRef } from "react";
 import { ThemeToggle } from "@/components/vault/ThemeToggle";
+import { CursorGlow } from "@/components/home/CursorGlow";
 import logo from "@/assets/logo-256.webp";
 
 export const Route = createFileRoute("/")({
@@ -98,6 +99,7 @@ function HomePage() {
   return (
     <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen bg-vault-bg text-vault-fg-muted">
+      <CursorGlow />
       {/* Top bar */}
       <m.header
         initial={{ y: -24, opacity: 0 }}
