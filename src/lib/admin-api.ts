@@ -56,6 +56,17 @@ export async function aDeleteAllHomepageBlocks() {
   await adminDeleteAllHomepageBlocks({ data: { token: requireToken() } });
 }
 
+/** Build a storage-safe object key (Supabase signed uploads reject exotic characters). */
+export function storagePath(folderId: string | null, name: string): string {
+  const safe = name
+    .normalize("NFKD")
+    .replace(/[^A-Za-z0-9._-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[_.]+/, "")
+    .slice(0, 120) || "file";
+  return `${folderId ?? "root"}/${crypto.randomUUID()}-${safe}`;
+}
+
 /** Upload a file to the assets bucket through a short-lived signed upload URL. */
 export async function aUploadFile(path: string, body: Blob | File, contentType?: string) {
   const { uploadToken } = await adminSignedUpload({ data: { token: requireToken(), path } });

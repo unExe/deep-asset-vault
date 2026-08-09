@@ -3,6 +3,7 @@ import { ensureFolder, getPublicUrl, type Asset, type Folder } from "@/hooks/use
 import { recordEvent } from "@/lib/visitor";
 import JSZip from "jszip";
 import { aInsert, aRemoveFiles, aUpdate, aUploadFile } from "@/lib/admin-api";
+import { storagePath } from "@/lib/admin-api";
 
 interface FolderRow {
   id: string;
@@ -108,7 +109,7 @@ async function copyFolderRecursive(srcId: string, destParentId: string | null): 
 
   const { data: files } = await supabase.from("assets").select("*").eq("folder_id", srcId);
   for (const f of ((files as Asset[] | null) ?? [])) {
-    const newPath = `${newId}/${crypto.randomUUID()}-${f.name}`;
+    const newPath = storagePath(newId, f.name);
     await copyStorageFile(f.storage_path, newPath);
     await aInsert("assets", [{
       name: f.name,
@@ -136,11 +137,11 @@ export async function pasteClipboard(
       const a = data as Asset | null;
       if (!a) continue;
       if (mode === "cut") {
-        const newPath = `${destFolderId ?? "root"}/${crypto.randomUUID()}-${a.name}`;
+        const newPath = storagePath(destFolderId, a.name);
         await moveStorageFile(a.storage_path, newPath);
         await aUpdate("assets", a.id, { folder_id: destFolderId, storage_path: newPath });
       } else {
-        const newPath = `${destFolderId ?? "root"}/${crypto.randomUUID()}-${a.name}`;
+        const newPath = storagePath(destFolderId, a.name);
         await copyStorageFile(a.storage_path, newPath);
         await aInsert("assets", [{
           name: a.name,

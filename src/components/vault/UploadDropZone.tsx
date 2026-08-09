@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUploadStore } from "@/lib/upload-store";
 import { uploadOne } from "@/lib/vault-upload";
 import { aInsert, aUploadFile } from "@/lib/admin-api";
+import { storagePath } from "@/lib/admin-api";
 
 interface Props {
   currentFolderId: string | null;
@@ -74,7 +75,7 @@ Edit (rename or replace) this file to describe what's inside this folder, who it
 — vault.unExe
 `;
   const blob = new Blob([content], { type: "text/plain" });
-  const path = `${folderId}/${crypto.randomUUID()}-${fileName}`;
+  const path = storagePath(folderId, fileName);
   try {
     await aUploadFile(path, blob, "text/plain");
   } catch {
