@@ -312,6 +312,7 @@ function HomePage() {
         </footer>
       </main>
     </div>
+    </LazyMotion>
   );
 }
 
