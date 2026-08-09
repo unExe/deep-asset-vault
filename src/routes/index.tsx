@@ -96,6 +96,7 @@ function HomePage() {
   const glowScale = useTransform(scrollYProgress, [0, 1], [1, reduce ? 1 : 1.4]);
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen bg-vault-bg text-vault-fg-muted">
       {/* Top bar */}
       <m.header
