@@ -2,6 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureFolder, getPublicUrl, type Asset, type Folder } from "@/hooks/useFileSystem";
 import { recordEvent } from "@/lib/visitor";
 import JSZip from "jszip";
+import { aInsert, aRemoveFiles, aUpdate, aUploadFile } from "@/lib/admin-api";
+import { storagePath } from "@/lib/admin-api";
 
 interface FolderRow {
   id: string;
@@ -90,35 +92,32 @@ export async function downloadSelection(
 /** Move a file in storage (download + re-upload + delete original). */
 async function moveStorageFile(oldPath: string, newPath: string): Promise<void> {
   const blob = await fetch(getPublicUrl(oldPath)).then((r) => r.blob());
-  const { error: upErr } = await supabase.storage.from("assets").upload(newPath, blob);
-  if (upErr) throw upErr;
-  await supabase.storage.from("assets").remove([oldPath]);
+  await aUploadFile(newPath, blob);
+  await aRemoveFiles([oldPath]);
 }
 
 async function copyStorageFile(oldPath: string, newPath: string): Promise<void> {
   const blob = await fetch(getPublicUrl(oldPath)).then((r) => r.blob());
-  const { error: upErr } = await supabase.storage.from("assets").upload(newPath, blob);
-  if (upErr) throw upErr;
+  await aUploadFile(newPath, blob);
 }
 
 /** Recursively duplicate a folder (and contents) into destinationId. */
 async function copyFolderRecursive(srcId: string, destParentId: string | null): Promise<void> {
   const { data: src } = await supabase.from("folders").select("name").eq("id", srcId).maybeSingle();
   const name = (src as { name: string } | null)?.name ?? "Untitled";
-  const { data: ins } = await supabase.from("folders").insert({ name, parent_id: destParentId }).select("id").single();
-  const newId = (ins as { id: string }).id;
+  const [newId] = await aInsert("folders", [{ name, parent_id: destParentId }]);
 
   const { data: files } = await supabase.from("assets").select("*").eq("folder_id", srcId);
   for (const f of ((files as Asset[] | null) ?? [])) {
-    const newPath = `${newId}/${crypto.randomUUID()}-${f.name}`;
+    const newPath = storagePath(newId, f.name);
     await copyStorageFile(f.storage_path, newPath);
-    await supabase.from("assets").insert({
+    await aInsert("assets", [{
       name: f.name,
       storage_path: newPath,
       folder_id: newId,
       file_type: f.file_type,
       size_bytes: f.size_bytes,
-    });
+    }]);
   }
   const { data: subs } = await supabase.from("folders").select("id").eq("parent_id", srcId);
   for (const s of ((subs as { id: string }[] | null) ?? [])) {
@@ -138,24 +137,24 @@ export async function pasteClipboard(
       const a = data as Asset | null;
       if (!a) continue;
       if (mode === "cut") {
-        const newPath = `${destFolderId ?? "root"}/${crypto.randomUUID()}-${a.name}`;
+        const newPath = storagePath(destFolderId, a.name);
         await moveStorageFile(a.storage_path, newPath);
-        await supabase.from("assets").update({ folder_id: destFolderId, storage_path: newPath }).eq("id", a.id);
+        await aUpdate("assets", a.id, { folder_id: destFolderId, storage_path: newPath });
       } else {
-        const newPath = `${destFolderId ?? "root"}/${crypto.randomUUID()}-${a.name}`;
+        const newPath = storagePath(destFolderId, a.name);
         await copyStorageFile(a.storage_path, newPath);
-        await supabase.from("assets").insert({
+        await aInsert("assets", [{
           name: a.name,
           storage_path: newPath,
           folder_id: destFolderId,
           file_type: a.file_type,
           size_bytes: a.size_bytes,
-        });
+        }]);
       }
     } else {
       if (mode === "cut") {
         if (destFolderId && (await isDescendant(it.id, destFolderId))) continue;
-        await supabase.from("folders").update({ parent_id: destFolderId }).eq("id", it.id);
+        await aUpdate("folders", it.id, { parent_id: destFolderId });
       } else {
         await copyFolderRecursive(it.id, destFolderId);
       }
@@ -177,9 +176,9 @@ async function isDescendant(folderId: string, possibleDescId: string): Promise<b
 export async function renameItem(id: string, kind: "folder" | "asset", newName: string): Promise<void> {
   if (!newName.trim()) return;
   if (kind === "folder") {
-    await supabase.from("folders").update({ name: newName }).eq("id", id);
+    await aUpdate("folders", id, { name: newName });
   } else {
-    await supabase.from("assets").update({ name: newName }).eq("id", id);
+    await aUpdate("assets", id, { name: newName });
   }
 }
 

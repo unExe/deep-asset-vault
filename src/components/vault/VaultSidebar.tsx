@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Favorites, useFavorites } from "@/lib/favorites";
 import { FileTypeChart } from "./FileTypeChart";
+import { aUpdate } from "@/lib/admin-api";
 
 interface PinnedFolder {
   id: string;
@@ -283,8 +284,7 @@ export async function togglePinFolder(id: string): Promise<boolean> {
     .maybeSingle();
   if (readErr) throw readErr;
   const next = !((cur as { sidebar_pinned: boolean } | null)?.sidebar_pinned);
-  const { error: upErr } = await supabase.from("folders").update({ sidebar_pinned: next }).eq("id", id);
-  if (upErr) throw upErr;
+  await aUpdate("folders", id, { sidebar_pinned: next });
   if (typeof window !== "undefined") window.dispatchEvent(new Event("vault:pinned-changed"));
   return next;
 }

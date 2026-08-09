@@ -3,6 +3,8 @@ import { useState, type DragEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUploadStore } from "@/lib/upload-store";
 import { uploadOne } from "@/lib/vault-upload";
+import { aInsert, aUploadFile } from "@/lib/admin-api";
+import { storagePath } from "@/lib/admin-api";
 
 interface Props {
   currentFolderId: string | null;
@@ -73,15 +75,18 @@ Edit (rename or replace) this file to describe what's inside this folder, who it
 — vault.unExe
 `;
   const blob = new Blob([content], { type: "text/plain" });
-  const path = `${folderId}/${crypto.randomUUID()}-${fileName}`;
-  const { error: upErr } = await supabase.storage.from("assets").upload(path, blob, { contentType: "text/plain" });
-  if (upErr) return;
-  await supabase.from("assets").insert({
+  const path = storagePath(folderId, fileName);
+  try {
+    await aUploadFile(path, blob, "text/plain");
+  } catch {
+    return;
+  }
+  await aInsert("assets", [{
     name: fileName,
     storage_path: path,
     folder_id: folderId,
     file_type: "text/plain",
     size_bytes: blob.size,
     is_info: true,
-  });
+  }]);
 }

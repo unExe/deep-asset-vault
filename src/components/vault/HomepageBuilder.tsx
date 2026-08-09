@@ -9,6 +9,7 @@ import {
 } from "@/lib/homepage-blocks";
 import { X, Plus, ArrowUp, ArrowDown, Trash, FloppyDisk } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { aDeleteAllHomepageBlocks, aInsert } from "@/lib/admin-api";
 
 interface Props {
   onClose: () => void;
@@ -60,15 +61,12 @@ export function HomepageBuilder({ onClose }: Props) {
     setBusy(true);
     try {
       // Replace strategy: delete all then insert current
-      await supabase.from("homepage_blocks").delete().not("id", "is", null);
+      await aDeleteAllHomepageBlocks();
       if (blocks.length) {
-        const rows = blocks.map((b, i) => ({
-          block_type: b.block_type,
-          position: i,
-          data: b.data as never,
-        }));
-        const { error } = await supabase.from("homepage_blocks").insert(rows);
-        if (error) throw error;
+        await aInsert(
+          "homepage_blocks",
+          blocks.map((b, i) => ({ block_type: b.block_type, position: i, data: b.data })),
+        );
       }
       toast.success("Homepage saved");
       const fresh = await loadBlocks();

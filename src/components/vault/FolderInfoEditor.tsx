@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NotePencil, X, FloppyDisk } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { aUpdate } from "@/lib/admin-api";
 
 interface Props {
   folderId: string | null;
@@ -41,8 +42,9 @@ export function FolderInfoBanner({ folderId, isEditorMode }: Props) {
     setEditing(true);
   };
   const save = async () => {
-    const { error } = await supabase.from("folders").update({ info_md: draft }).eq("id", folderId);
-    if (error) {
+    try {
+      await aUpdate("folders", folderId, { info_md: draft });
+    } catch {
       toast.error("Save failed");
       return;
     }
