@@ -1,0 +1,2 @@
+ALTER TABLE public.folder_comments ADD COLUMN IF NOT EXISTS parent_id uuid REFERENCES public.folder_comments(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS folder_comments_parent_id_idx ON public.folder_comments(parent_id);

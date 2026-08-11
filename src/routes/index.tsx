@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   YoutubeLogo,
-  TelegramLogo,
   ArrowUpRight,
   Vault,
   Lightning,
@@ -19,6 +18,7 @@ import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/vault/ThemeToggle";
 import { CursorGlow } from "@/components/home/CursorGlow";
 import logo from "@/assets/logo-256.webp";
+import { SocialIcon } from "@/lib/social-icons";
 import {
   DEFAULT_HERO,
   DEFAULT_SOCIALS,
@@ -48,7 +48,6 @@ export const Route = createFileRoute("/")({
 });
 
 const YT_URL = "https://youtube.com/@unexecutable?si=U0GY6Jh7rd_CcrC4";
-const TG_URL = "https://t.me/+MMr5_awFb4BkN2E9";
 
 const FEATURES = [
   { icon: <Folder size={20} />, title: "Folder structure", desc: "Navigate exactly like your file explorer. Nested, searchable, fast." },
@@ -96,9 +95,7 @@ function Reveal({
 }
 
 function socialIcon(icon: string) {
-  if (icon === "youtube") return <YoutubeLogo size={18} weight="fill" />;
-  if (icon === "telegram") return <TelegramLogo size={18} weight="fill" />;
-  return <ShareNetwork size={18} />;
+  return <SocialIcon icon={icon} size={18} />;
 }
 
 function HomePage() {
@@ -133,7 +130,7 @@ function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <m.img
-              src={logo}
+              src={hero.avatarUrl || logo}
               alt=".unExe logo"
               className="w-7 h-7 rounded-md object-cover"
               width={28}
@@ -338,9 +335,18 @@ function HomePage() {
 
         <footer className="max-w-6xl mx-auto px-6 pt-12 pb-12 border-t border-vault-hairline flex flex-col md:flex-row justify-between items-center gap-6">
           <span className="font-mono text-[11px] text-vault-fg-muted">© {new Date().getFullYear()} .UNEXE — ALL RIGHTS RESERVED.</span>
-          <div className="flex gap-8">
-            <a href={YT_URL} target="_blank" rel="noreferrer" className="text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors">YouTube</a>
-            <a href={TG_URL} target="_blank" rel="noreferrer" className="text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors">Telegram</a>
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+            {socials.map((s) => (
+              <a
+                key={s.id}
+                href={s.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors"
+              >
+                <SocialIcon icon={s.icon} size={13} /> {s.label}
+              </a>
+            ))}
             <Link to="/vault" className="text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors">Vault</Link>
           </div>
         </footer>

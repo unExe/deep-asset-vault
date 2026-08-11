@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/theme";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import { ExternalLinkGuard } from "@/components/ExternalLinkGuard";
 
 
 import appCss from "../styles.css?url";
@@ -71,6 +72,7 @@ function RootComponent() {
   return (
     <ThemeProvider>
       <AnalyticsTracker />
+      <ExternalLinkGuard />
       <Outlet />
       <Toaster />
     </ThemeProvider>

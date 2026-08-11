@@ -9,7 +9,9 @@ import { ContextMenu, type MenuItem } from "@/components/vault/ContextMenu";
 import { ThemeToggle } from "@/components/vault/ThemeToggle";
 import { AssetInfoDialog, FolderInfoDialog, InfoDialog } from "@/components/vault/InfoDialog";
 import { VaultSidebar, togglePinFolder } from "@/components/vault/VaultSidebar";
-import { CommentSection } from "@/components/vault/CommentSection";
+import { CommentSection, CommentsLauncher } from "@/components/vault/CommentSection";
+import { SettingsDialog, ShortcutsHelp } from "@/components/vault/SettingsDialog";
+import { comboFromEvent, useUserSettings, type ActionId } from "@/lib/user-settings";
 import { FolderInfoBanner } from "@/components/vault/FolderInfoEditor";
 import { GDriveBrowser } from "@/components/vault/GDriveBrowser";
 import { UploadDialog } from "@/components/vault/UploadDialog";
@@ -48,6 +50,8 @@ import {
   PushPin,
   Upload,
   MagnifyingGlass,
+  Gear,
+  SlidersHorizontal,
   List,
   X as XIcon,
 } from "@phosphor-icons/react";
@@ -84,6 +88,9 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [embedInfo, setEmbedInfo] = useState<GDriveEmbed | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [settings] = useUserSettings();
 
   // Desktop (>=1024px) expanded, tablet (768-1023px) collapsed.
   useEffect(() => {
@@ -95,7 +102,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   }, []);
 
   const { folders, assets, loading, refresh } = useFileSystem(folderId);
-  const { selected, clear, selectOnly, setClipboard, clipboard } = useVaultStore();
+  const { selected, clear, selectOnly, selectMany, setClipboard, clipboard } = useVaultStore();
 
   const refreshEmbeds = useCallback(async () => {
     setEmbeds(await listEmbeds(folderId));
@@ -400,28 +407,54 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     return new Set(clipboard.items.map((i) => i.id));
   }, [clipboard]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (user-configurable in settings)
   useEffect(() => {
+    if (!settings.shortcutsEnabled) return;
+    const binds = settings.keybinds;
+    const match = (id: ActionId, combo: string) => binds[id] === combo;
+
     const onKey = (e: KeyboardEvent) => {
       if (renamingId) return;
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
-      const meta = e.ctrlKey || e.metaKey;
-      if (meta && e.key === "c" && selected.size) {
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return;
+      const combo = comboFromEvent(e);
+      if (!combo) return;
+
+      const run = (fn: () => void) => {
         e.preventDefault();
-        handleCopy();
-      } else if (meta && e.key === "x" && selected.size && isEditorMode) {
-        e.preventDefault();
-        handleCut();
-      } else if (meta && e.key === "v" && isEditorMode) {
-        e.preventDefault();
-        void handlePaste();
-      } else if (e.key === "F2" && selected.size === 1) {
-        e.preventDefault();
-        startRename([...selected.keys()][0]);
-      } else if (e.key === "Delete" && selected.size && isEditorMode) {
-        void handleDelete();
-      } else if (e.key === "Escape") {
+        fn();
+      };
+
+      if (match("copy", combo) && selected.size) return run(handleCopy);
+      if (match("cut", combo) && selected.size && isEditorMode) return run(handleCut);
+      if (match("paste", combo) && isEditorMode) return run(() => void handlePaste());
+      if (match("rename", combo) && selected.size === 1 && isEditorMode)
+        return run(() => startRename([...selected.keys()][0]));
+      if (match("delete", combo) && selected.size && isEditorMode) return run(() => void handleDelete());
+      if (match("search", combo)) return run(() => setSearchOpen(true));
+      if (match("newFolder", combo) && isEditorMode) return run(() => void handleNewFolder());
+      if (match("upload", combo) && isEditorMode) return run(() => setUploadOpen(true));
+      if (match("selectAll", combo))
+        return run(() =>
+          selectMany([
+            ...filteredFolders.map((f) => ({ id: f.id, kind: "folder" as const })),
+            ...filteredAssets.map((a) => ({ id: a.id, kind: "asset" as const })),
+          ]),
+        );
+      if (match("preview", combo) && selected.size) return run(() => void handlePreview());
+      if (match("download", combo) && selected.size) return run(() => void handleDownload());
+      if (match("info", combo) && selected.size === 1) return run(showInfoForSelected);
+      if (match("favorite", combo) && selected.size) return run(handleFavoriteSelected);
+      if (match("toggleSidebar", combo)) return run(() => setSidebarCollapsed((v) => !v));
+      if (match("comments", combo)) return run(() => window.dispatchEvent(new Event("vault:open-comments")));
+      if (match("settings", combo)) return run(() => setSettingsOpen(true));
+      if (match("help", combo)) return run(() => setHelpOpen(true));
+      if (match("switchAdmin", combo) && isEditorMode)
+        return run(() => {
+          window.location.href = "/admin/unexe";
+        });
+
+      if (combo === "esc") {
         if (pendingMove) {
           setPendingMove(null);
           toast.message("Move cancelled");
@@ -432,7 +465,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, clipboard, renamingId, isEditorMode]);
+  }, [selected, clipboard, renamingId, isEditorMode, settings, filteredFolders, filteredAssets, pendingMove]);
 
   // === Build context menu items based on context ===
   const buildContextItems = (): MenuItem[] => {
@@ -607,7 +640,24 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
                   >
                     <MagnifyingGlass size={15} />
                   </button>
+                  <button
+                    onClick={() => setSettingsOpen(true)}
+                    className="shrink-0 p-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg hover:bg-vault-overlay-strong"
+                    aria-label="Settings"
+                    title="Settings"
+                  >
+                    <Gear size={15} />
+                  </button>
                   <ThemeToggle />
+                  {isEditorMode && (
+                    <a
+                      href="/admin/unexe"
+                      className="shrink-0 hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg text-xs hover:bg-vault-overlay-strong"
+                      title="Switch to the site admin panel"
+                    >
+                      <SlidersHorizontal size={14} /> Admin
+                    </a>
+                  )}
                   {isEditorMode && (
                     <button
                       onClick={() => setUploadOpen(true)}
@@ -652,9 +702,16 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
             grid
           )}
 
-          <CommentSection folderId={folderId} isEditorMode={isEditorMode} />
+          {settings.showComments && !settings.commentsAsDialog && (
+            <CommentSection folderId={folderId} isEditorMode={isEditorMode} />
+          )}
         </main>
       </div>
+
+      <CommentsLauncher folderId={folderId} isEditorMode={isEditorMode} hidden={selected.size > 0} />
+
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      {helpOpen && <ShortcutsHelp onClose={() => setHelpOpen(false)} />}
 
       <ActionBar
         assets={assets}

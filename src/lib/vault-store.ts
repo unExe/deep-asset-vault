@@ -12,6 +12,7 @@ interface VaultState {
   selected: Map<string, SelectionKind>;
   toggle: (id: string, kind: SelectionKind) => void;
   selectOnly: (id: string, kind: SelectionKind) => void;
+  selectMany: (items: { id: string; kind: SelectionKind }[]) => void;
   clear: () => void;
   isSelected: (id: string) => boolean;
 
@@ -30,6 +31,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       return { selected: next };
     }),
   selectOnly: (id, kind) => set({ selected: new Map([[id, kind]]) }),
+  selectMany: (items) => set({ selected: new Map(items.map((i) => [i.id, i.kind])) }),
   clear: () => set({ selected: new Map() }),
   isSelected: (id) => get().selected.has(id),
 

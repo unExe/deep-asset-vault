@@ -150,6 +150,7 @@ export type Database = {
           folder_id: string | null
           id: string
           name: string
+          parent_id: string | null
         }
         Insert: {
           body: string
@@ -158,6 +159,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           name: string
+          parent_id?: string | null
         }
         Update: {
           body?: string
@@ -166,8 +168,17 @@ export type Database = {
           folder_id?: string | null
           id?: string
           name?: string
+          parent_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "folder_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "folder_comments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       folders: {
         Row: {
