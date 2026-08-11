@@ -13,10 +13,10 @@ import {
   UploadSimple,
 } from "@phosphor-icons/react";
 import { AdminGate } from "@/components/admin/AdminGate";
+import { IconPicker, SocialIcon } from "@/lib/social-icons";
 import {
   DEFAULT_HERO,
   DEFAULT_SOCIALS,
-  ICON_OPTIONS,
   fetchSiteSettings,
   type HeroSettings,
   type SocialLink,
@@ -297,46 +297,45 @@ function LinksEditor({
 
       <div className="space-y-3">
         {socials.map((s, i) => (
-          <div
-            key={s.id}
-            className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1.4fr_auto_auto] gap-2 items-center border border-vault-hairline rounded-lg p-3"
-          >
-            <input
-              value={s.label}
-              onChange={(e) => update(i, { label: e.target.value })}
-              placeholder="Label (YouTube)"
-              className={inputCls}
-            />
-            <input
-              value={s.handle}
-              onChange={(e) => update(i, { handle: e.target.value })}
-              placeholder="Handle (/ @unexe)"
-              className={inputCls}
-            />
-            <input
-              value={s.url}
-              onChange={(e) => update(i, { url: e.target.value })}
-              placeholder="https://…"
-              className={inputCls}
-            />
-            <select
-              value={s.icon}
-              onChange={(e) => update(i, { icon: e.target.value })}
-              className={inputCls}
-            >
-              {ICON_OPTIONS.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={() => setSocials(socials.filter((_, idx) => idx !== i))}
-              className="p-2 rounded-md text-red-400 hover:bg-red-500/10 justify-self-start"
-              aria-label="Remove link"
-            >
-              <Trash size={16} />
-            </button>
+          <div key={s.id} className="border border-vault-hairline rounded-lg p-3 space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1.4fr_auto] gap-2 items-center">
+              <span className="w-9 h-9 shrink-0 grid place-items-center rounded-md border border-vault-hairline bg-vault-bg text-vault-fg">
+                <SocialIcon icon={s.icon} size={17} />
+              </span>
+              <input
+                value={s.label}
+                onChange={(e) => update(i, { label: e.target.value })}
+                placeholder="Label (YouTube)"
+                className={inputCls}
+              />
+              <input
+                value={s.handle}
+                onChange={(e) => update(i, { handle: e.target.value })}
+                placeholder="Handle (/ @unexe)"
+                className={inputCls}
+              />
+              <input
+                value={s.url}
+                onChange={(e) => update(i, { url: e.target.value })}
+                placeholder="https://…"
+                className={inputCls}
+              />
+              <button
+                onClick={() => setSocials(socials.filter((_, idx) => idx !== i))}
+                className="p-2 rounded-md text-red-400 hover:bg-red-500/10 justify-self-start"
+                aria-label="Remove link"
+              >
+                <Trash size={16} />
+              </button>
+            </div>
+            <details className="group">
+              <summary className="text-xs text-vault-fg-muted cursor-pointer hover:text-vault-fg select-none">
+                Icon — <span className="font-mono">{s.icon}</span> (click to change)
+              </summary>
+              <div className="mt-2">
+                <IconPicker value={s.icon} onChange={(icon) => update(i, { icon })} />
+              </div>
+            </details>
           </div>
         ))}
       </div>
