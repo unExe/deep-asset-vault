@@ -432,6 +432,7 @@ export function CommentsLauncher({
   }, []);
 
   if (hidden || !settings.showComments) return null;
+  const showButton = !inView;
 
   const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches;
 
@@ -445,27 +446,21 @@ export function CommentsLauncher({
 
   return (
     <>
-      <button
-        onClick={activate}
-        aria-label="Comments"
-        className={
-          inView
-            ? "fixed left-1/2 -translate-x-1/2 top-3 z-40 inline-flex items-center gap-2 pl-3 pr-4 py-2 rounded-full bg-vault-menu-bg/95 backdrop-blur border border-vault-hairline text-vault-fg text-xs font-medium shadow-lg transition-all duration-300"
-            : "fixed right-4 bottom-24 sm:bottom-6 z-40 inline-flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full bg-vault-fg text-vault-bg text-xs font-semibold shadow-lg hover:opacity-90 transition-all duration-300"
-        }
-      >
-        <ChatCircle size={16} weight="fill" />
-        {inView ? "Join the discussion" : "Comments"}
-        {count > 0 && (
-          <span
-            className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-              inView ? "bg-vault-overlay-strong text-vault-fg" : "bg-vault-bg/20 text-vault-bg"
-            }`}
-          >
-            {count}
-          </span>
-        )}
-      </button>
+      {showButton && (
+        <button
+          onClick={activate}
+          aria-label="Comments"
+          className="fixed right-4 bottom-24 sm:bottom-6 z-40 inline-flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full bg-vault-fg text-vault-bg text-xs font-semibold shadow-lg hover:opacity-90 transition-all duration-300"
+        >
+          <ChatCircle size={16} weight="fill" />
+          Comments
+          {count > 0 && (
+            <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-vault-bg/20 text-vault-bg">
+              {count}
+            </span>
+          )}
+        </button>
+      )}
 
       {dialog && (
         <CommentsDialog folderId={folderId} isEditorMode={isEditorMode} onClose={() => setDialog(false)} />
