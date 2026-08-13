@@ -1,92 +1,37 @@
-# AssetVault Explorer
+# AssetVault 🎬📁
 
-Role: You are an expert Full-Stack Developer specializing in React, Tailwind CSS, and  (PostgreSQL + Storage).
+A high-performance, dark-themed, folder-based asset management and download web application tailored for content creators and video editors. Designed to mimic desktop OS file explorers (Windows/macOS), AssetVault provides a seamless directory navigation experience, rich thumbnail previews, bulk downloadable zip archives, and an integrated hidden admin upload interface.
 
-Project Goal: Build "AssetVault," a high-end, folder-based asset management system for editors. The UI must be a pixel-perfect recreation of the dark, desktop-OS style seen in the provided reference images.
+---
 
-1. Core Architecture (The Filesystem)
+## ✨ Features
 
-Folder Fundamental: The UI is a file explorer. Everything is controlled by a currentFolderId state.
+- **📂 OS-Style Folder System**: Infinite nesting support (`Folders` inside `Folders`) using parent-child relational database structures.
+- **🍞 Dynamic Breadcrumb Trail**: Instant navigation through deeply nested paths (e.g., `Home > Attack on Titan > OVA > A Choice With No Regrets`) with clickable path segments.
+- **🎨 Deep Dark Aesthetic**: Sleek UI designed for high-contrast viewing, matching professional editor environments (`#0D0D0D` background with `#1A1A1A` cards).
+- **⚡ Phosphor Icons**: Integrated with `phosphor-react` for modern, clean visual indicators.
+- **Selection & Multi-Download**:
+  - Select individual or multiple assets with radio/checkmark overlays.
+  - Floating action menu with **Preview** and **Download** actions.
+  - On-the-fly **ZIP compression** using `jszip` for downloading entire folders or multi-selected items in one click.
+- **🔐 Secret Admin Drag-and-Drop (`/admin/letmeupload`)**:
+  - Unlocked via secret URL path without confusing UI overlays for general users.
+  - Whole-screen dropzone instantly uploads assets into the current open folder directory.
+  - Automatically handles storage upload and database record creation.
 
-Database Schema (PostgreSQL): * folders table: id, name, parent_id (UUID, self-referencing for nesting).
+---
 
-assets table: id, name, storage_url, folder_id (Foreign Key to folders), file_type.
+## 🗝️ How to Use
 
-Recursive Breadcrumbs: Implement a dynamic breadcrumb trail (e.g., Home > Attack on Titan > OVA). Each segment must be clickable to navigate back. Use Phosphor Icons <CaretRight /> as separators.
+### For Public Users
+1. Visit the root URL `https://your-domain.com`.
+2. Browse through folders and subfolders seamlessly.
+3. Click on items to select them (indicated by a circular checkmark).
+4. Use the floating action bar at the bottom to **Preview** files or **Download** them (single files or zipped packages).
 
-2. The "Hidden Admin" Protocol
-
-The Entry Point: The site is read-only by default. Admin capabilities are unlocked ONLY when the URL matches: /admin/letmeupload.
-
-Editor Mode: When this path is active, set a global state isEditorMode = true.
-
-Integrated Uploading: In Editor Mode, the folder view becomes a Drag & Drop zone. Dropping a file triggers:
-
-An upload to Supabase Storage bucket.
-
-An insert into the Supabase assets table, linked to the currentFolderId.
-
-Security: Use the URL path to toggle the UI, but ensure the logic is stripped for public users.
-
-3. UI/UX Specifications (Based on Images)
-
-Theme: Deep Dark Mode. Background: #0D0D0D, Folder/File Cards: #1A1A1A.
-
-Icons: Use Phosphor Icons (phosphor-react) in Regular or Light weight.
-
-Asset Grid:
-
-Folders: Use <FolderSimple weight="fill" />.
-
-Files: Show thumbnails. Clicking a file toggles a selection indicator (Phosphor <CheckCircle weight="fill" />) at the bottom center of the item.
-
-Floating Action Bar: When items are selected, show a bottom bar with:
-
-"Preview" (Phosphor <Eye />)
-
-"Download" (Phosphor <DownloadSimple />)
-
-"Delete" (Visible/Active only in Editor Mode).
-
-4. Technical Implementation
-
-Framework: React (Vite) + Tailwind CSS.
-
-State Management: Use Zustand or React Context to manage navigation and selection.
-
-Bulk Downloading: Integrate jszip. When a user clicks download, the app must fetch the public URLs from Supabase and bundle them into a .zip.
-
-Supabase Client: Generate a useFileSystem hook to handle the select queries for folders and assets based on the parent_id.
-
-5. Output Requirements
-
-Please generate:
-
-The Supabase Database Schema (SQL) for folders and assets.
-
-The FolderGrid Component handling selection and Phosphor Icon implementation.
-
-The Breadcrumb Logic for deep-nested navigation.
-
-The Upload & Delete Logic reserved for the /admin/letmeupload route.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/7bfb0e44-cd00-4016-924a-6cc3e0678097).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+### For Admins (Uploading & Asset Management)
+1. Navigate directly to `https://your-domain.com/admin/letmeupload`.
+2. Navigate to the desired folder where you want to add assets.
+3. Simply **Drag & Drop** files anywhere onto the window.
+4. Assets will automatically upload to Supabase Storage and register into that exact folder in real-time.
+5. Select items in Editor Mode to reveal the **Delete** action in the floating menu.
