@@ -35,6 +35,33 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          published: boolean
+          title: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          title: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
       asset_events: {
         Row: {
           asset_id: string
@@ -266,6 +293,33 @@ export type Database = {
           id?: string
           position?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      material_requests: {
+        Row: {
+          contact: string | null
+          created_at: string
+          details: string | null
+          id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          status?: string
+          title?: string
         }
         Relationships: []
       }

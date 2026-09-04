@@ -92,6 +92,30 @@ export async function uploadOne(file: File, folderId: string | null, overrides: 
   }]);
 }
 
+/**
+ * Folder lookups are deduplicated per import batch. Without this, several files
+ * from the same dropped folder race each other into `ensureFolder` and the
+ * folder gets created twice, splitting its contents across the copies.
+ */
+let folderCache = new Map<string, Promise<string>>();
+
+/** Call once before an import so folder de-duplication starts clean. */
+export function beginImportBatch() {
+  folderCache = new Map();
+}
+
+function ensureFolderOnce(name: string, parentId: string | null): Promise<string> {
+  const key = `${parentId ?? "root"}//${name}`;
+  const cached = folderCache.get(key);
+  if (cached) return cached;
+  const p = ensureFolder(name, parentId).catch((e) => {
+    folderCache.delete(key);
+    throw e;
+  });
+  folderCache.set(key, p);
+  return p;
+}
+
 export async function uploadFromRelativePath(
   file: File,
   relPath: string,
@@ -103,10 +127,11 @@ export async function uploadFromRelativePath(
   if (rootNameOverride && folderParts.length > 0) folderParts[0] = rootNameOverride;
   let parent = baseFolderId;
   for (const name of folderParts) {
-    parent = await ensureFolder(name, parent);
+    parent = await ensureFolderOnce(name, parent);
   }
   await uploadOne(file, parent);
 }
+
 
 /** Selectable MIME types for manual entry in the upload dialog. */
 export const FILE_TYPE_OPTIONS: { group: string; items: { label: string; value: string }[] }[] = [

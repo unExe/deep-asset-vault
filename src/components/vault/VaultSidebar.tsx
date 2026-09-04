@@ -8,11 +8,17 @@ import {
   List,
   CaretRight,
   CaretLeft,
+  HandHeart,
+  Bell,
 } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { Favorites, useFavorites } from "@/lib/favorites";
 import { FileTypeChart } from "./FileTypeChart";
 import { aUpdate } from "@/lib/admin-api";
+import { useAnnouncements } from "@/lib/announcements";
+import { AnnouncementsCard } from "./AnnouncementsCard";
+import { NotificationModal } from "./NotificationModal";
+import { RequestMaterialDialog } from "./RequestMaterialDialog";
 
 interface PinnedFolder {
   id: string;
@@ -37,7 +43,10 @@ export function VaultSidebar({
   const [pinned, setPinned] = useState<PinnedFolder[]>([]);
   const [openMobile, setOpenMobile] = useState(false);
   const [flyout, setFlyout] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
   const favs = useFavorites();
+  const { items: announcements, unread } = useAnnouncements();
 
   const refreshPinned = async () => {
     const { data } = await supabase
@@ -57,11 +66,14 @@ export function VaultSidebar({
   useEffect(() => {
     const onPinChange = () => void refreshPinned();
     const onOpen = () => setOpenMobile(true);
+    const onNotif = () => setNotifOpen(true);
     window.addEventListener("vault:pinned-changed", onPinChange);
     window.addEventListener("vault:open-sidebar", onOpen);
+    window.addEventListener("vault:open-notifications", onNotif);
     return () => {
       window.removeEventListener("vault:pinned-changed", onPinChange);
       window.removeEventListener("vault:open-sidebar", onOpen);
+      window.removeEventListener("vault:open-notifications", onNotif);
     };
   }, []);
 
@@ -80,7 +92,7 @@ export function VaultSidebar({
         {onToggleCollapsed && (
           <button
             onClick={onToggleCollapsed}
-            className="ml-auto hidden md:block p-1 rounded hover:bg-vault-overlay text-vault-fg-muted"
+            className="ml-auto hidden md:block p-1 rounded hover:bg-vault-overlay text-vault-fg-muted transition-colors"
             aria-label="Collapse sidebar"
           >
             <CaretLeft size={16} />
@@ -102,6 +114,19 @@ export function VaultSidebar({
             }}
           />
           <SidebarLink icon={<Star size={15} />} label={`Favorites (${favs.length})`} to="/vault/favorites" onClick={() => setOpenMobile(false)} />
+          <SidebarBtn
+            icon={<HandHeart size={15} />}
+            label="Request Material"
+            onClick={() => {
+              setRequestOpen(true);
+              setOpenMobile(false);
+            }}
+          />
+        </div>
+
+        {/* Announcements — desktop sidebar only; mobile uses the bell modal */}
+        <div className="hidden md:block">
+          <AnnouncementsCard items={announcements} onOpenAll={() => setNotifOpen(true)} />
         </div>
 
         {/* Pinned folders */}
@@ -159,6 +184,25 @@ export function VaultSidebar({
       >
         <Star size={16} />
       </Link>
+      <button
+        onClick={() => setRequestOpen(true)}
+        className="p-2 rounded-md hover:bg-vault-overlay text-vault-fg/85"
+        aria-label="Request Material"
+        title="Request Material"
+      >
+        <HandHeart size={16} />
+      </button>
+      <button
+        onClick={() => setNotifOpen(true)}
+        className="relative p-2 rounded-md hover:bg-vault-overlay text-vault-fg/85"
+        aria-label="Announcements"
+        title="Announcements"
+      >
+        <Bell size={16} />
+        {unread > 0 && (
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-vault-accent" />
+        )}
+      </button>
 
       <div
         className="relative"
@@ -172,7 +216,7 @@ export function VaultSidebar({
           <CaretRight size={16} />
         </button>
         {flyout && (
-          <div className="absolute left-full top-0 ml-1 w-56 rounded-lg bg-vault-menu-bg border border-vault-hairline shadow-2xl p-1.5 z-50">
+          <div className="absolute left-full top-0 ml-1 w-56 rounded-lg bg-vault-menu-bg border border-vault-hairline shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-left-2 duration-150">
             <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-vault-fg-muted">
               Folders u should checkout
             </div>
@@ -200,28 +244,37 @@ export function VaultSidebar({
 
   return (
     <>
-      {/* Mobile trigger lives in the header (vault:open-sidebar event) */}
-
-
-
       {/* Desktop sidebar */}
       <aside
-        className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 z-30 bg-vault-menu-bg border-r border-vault-hairline transition-[width] ${
+        className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 z-30 overflow-hidden bg-vault-menu-bg border-r border-vault-hairline transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           collapsed ? "md:w-14" : "md:w-64"
         }`}
       >
-        {collapsed ? railBody : sidebarBody}
+        <div
+          key={collapsed ? "rail" : "full"}
+          className="h-full w-full animate-in fade-in duration-300"
+        >
+          {collapsed ? railBody : sidebarBody}
+        </div>
       </aside>
 
       {/* Mobile drawer */}
       {openMobile && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpenMobile(false)} />
-          <aside className="relative w-72 max-w-[85vw] bg-vault-menu-bg border-r border-vault-hairline flex flex-col">
+          <div
+            className="absolute inset-0 bg-black/60 animate-in fade-in duration-200"
+            onClick={() => setOpenMobile(false)}
+          />
+          <aside className="relative w-72 max-w-[85vw] bg-vault-menu-bg border-r border-vault-hairline flex flex-col animate-in slide-in-from-left duration-300 ease-out">
             {sidebarBody}
           </aside>
         </div>
       )}
+
+      {notifOpen && (
+        <NotificationModal items={announcements} onClose={() => setNotifOpen(false)} />
+      )}
+      {requestOpen && <RequestMaterialDialog onClose={() => setRequestOpen(false)} />}
     </>
   );
 }

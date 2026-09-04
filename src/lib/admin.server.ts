@@ -134,6 +134,8 @@ const WRITABLE: Record<string, string[]> = {
   blogs: [
     'id', 'title', 'slug', 'excerpt', 'content', 'cover_url', 'tags', 'published',
   ],
+  announcements: ['id', 'title', 'description', 'banner_url', 'published'],
+  material_requests: ['id', 'status'],
   folder_comments: [], // delete-only for admins
 };
 
