@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useUploadStore } from "@/lib/upload-store";
-import { FILE_TYPE_OPTIONS, uploadFromRelativePath, uploadOne } from "@/lib/vault-upload";
+import { FILE_TYPE_OPTIONS, runPool, uploadFromRelativePath, uploadOne } from "@/lib/vault-upload";
 import { addEmbed, parseDriveFileId, parseDriveFolderId } from "@/lib/gdrive";
 
 type Source = "files" | "folder" | "drive-folder" | "drive-file" | "link";
@@ -27,18 +27,6 @@ const SOURCES: { id: Source; label: string; icon: React.ReactNode }[] = [
   { id: "drive-file", label: "Drive file", icon: <FileArrowUp size={16} /> },
   { id: "link", label: "Link", icon: <LinkSimple size={16} /> },
 ];
-
-/** Runs tasks with limited concurrency so large imports finish much faster. */
-async function runPool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
-  let i = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (i < items.length) {
-      const idx = i++;
-      await fn(items[idx]);
-    }
-  });
-  await Promise.all(workers);
-}
 
 export function UploadDialog({ currentFolderId, onDone, onClose }: Props) {
   const [source, setSource] = useState<Source>("files");

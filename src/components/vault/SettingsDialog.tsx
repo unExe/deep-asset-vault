@@ -4,14 +4,20 @@ import {
   ACTION_LABELS,
   DEFAULT_KEYBINDS,
   comboFromEvent,
+  isAdminAction,
   formatCombo,
   useUserSettings,
   type ActionId,
 } from "@/lib/user-settings";
 
-const ACTION_IDS = Object.keys(ACTION_LABELS) as ActionId[];
+const ALL_ACTION_IDS = Object.keys(ACTION_LABELS) as ActionId[];
 
-export function SettingsDialog({ onClose }: { onClose: () => void }) {
+function visibleActions(isEditorMode: boolean): ActionId[] {
+  return ALL_ACTION_IDS.filter((id) => isEditorMode || !isAdminAction(id));
+}
+
+export function SettingsDialog({ onClose, isEditorMode = false }: { onClose: () => void; isEditorMode?: boolean }) {
+  const ACTION_IDS = visibleActions(isEditorMode);
   const [settings, update] = useUserSettings();
   const [tab, setTab] = useState<"general" | "keys">("general");
   const [capturing, setCapturing] = useState<ActionId | null>(null);
@@ -167,7 +173,8 @@ function Toggle({
 }
 
 /** Compact cheat-sheet overlay listing every shortcut. */
-export function ShortcutsHelp({ onClose }: { onClose: () => void }) {
+export function ShortcutsHelp({ onClose, isEditorMode = false }: { onClose: () => void; isEditorMode?: boolean }) {
+  const ACTION_IDS = visibleActions(isEditorMode);
   const [settings] = useUserSettings();
   return (
     <div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>

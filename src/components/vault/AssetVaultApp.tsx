@@ -425,7 +425,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
         fn();
       };
 
-      if (match("copy", combo) && selected.size) return run(handleCopy);
+      if (match("copy", combo) && selected.size && isEditorMode) return run(handleCopy);
       if (match("cut", combo) && selected.size && isEditorMode) return run(handleCut);
       if (match("paste", combo) && isEditorMode) return run(() => void handlePaste());
       if (match("rename", combo) && selected.size === 1 && isEditorMode)
@@ -710,8 +710,8 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
 
       <CommentsLauncher folderId={folderId} isEditorMode={isEditorMode} hidden={selected.size > 0} />
 
-      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
-      {helpOpen && <ShortcutsHelp onClose={() => setHelpOpen(false)} />}
+      {settingsOpen && <SettingsDialog isEditorMode={isEditorMode} onClose={() => setSettingsOpen(false)} />}
+      {helpOpen && <ShortcutsHelp isEditorMode={isEditorMode} onClose={() => setHelpOpen(false)} />}
 
       <ActionBar
         assets={assets}
