@@ -92,6 +92,8 @@
   --vault-hairline: oklch(0.15 0 0 / 10%);
   --vault-menu-bg: oklch(1 0 0);
   --vault-danger: oklch(0.55 0.22 25);
+  --scroll-thumb: oklch(0.15 0 0 / 25%);
+  --scroll-thumb-hover: oklch(0.15 0 0 / 45%);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
@@ -140,6 +142,8 @@
   --vault-hairline: oklch(1 0 0 / 12%);
   --vault-menu-bg: oklch(0.175 0.009 265);
   --vault-danger: oklch(0.7 0.19 22);
+  --scroll-thumb: oklch(1 0 0 / 20%);
+  --scroll-thumb-hover: oklch(1 0 0 / 38%);
 
   --card: oklch(0.208 0.042 265.755);
   --card-foreground: oklch(0.984 0.003 247.858);
