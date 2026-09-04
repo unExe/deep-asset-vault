@@ -5,6 +5,7 @@ import { useUploadStore } from "@/lib/upload-store";
 import {
   filesFromDataTransfer,
   runPool,
+  beginImportBatch,
   uploadFromRelativePath,
   uploadOne,
   type DroppedFile,
@@ -35,6 +36,7 @@ export function UploadDropZone({ currentFolderId, onUploaded, children }: Props)
   }, []);
 
   const runUploads = async (items: DroppedFile[]) => {
+    beginImportBatch();
     let okCount = 0;
     let failed = 0;
     await runPool(items, 4, async ({ file, relPath }) => {

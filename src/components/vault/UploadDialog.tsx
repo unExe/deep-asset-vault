@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useUploadStore } from "@/lib/upload-store";
-import { FILE_TYPE_OPTIONS, runPool, uploadFromRelativePath, uploadOne } from "@/lib/vault-upload";
+import { FILE_TYPE_OPTIONS, beginImportBatch, runPool, uploadFromRelativePath, uploadOne } from "@/lib/vault-upload";
 import { addEmbed, parseDriveFileId, parseDriveFolderId } from "@/lib/gdrive";
 
 type Source = "files" | "folder" | "drive-folder" | "drive-file" | "link";
@@ -45,6 +45,7 @@ export function UploadDialog({ currentFolderId, onDone, onClose }: Props) {
   const customName = useDefaultName ? "" : name.trim();
 
   const runUploads = async (items: { file: File; relPath?: string }[]) => {
+    beginImportBatch();
     setBusy(true);
     let ok = 0;
     let failed = 0;
