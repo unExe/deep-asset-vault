@@ -74,11 +74,30 @@ export function storagePath(folderId: string | null, name: string): string {
 
 /** Upload a file to the assets bucket through a short-lived signed upload URL. */
 export async function aUploadFile(path: string, body: Blob | File, contentType?: string) {
-  const { uploadToken } = await adminSignedUpload({ data: { token: requireToken(), path } });
+  let uploadToken: string;
+  try {
+    ({ uploadToken } = await adminSignedUpload({ data: { token: requireToken(), path } }));
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    throw new Error(
+      /unauthorized/i.test(msg)
+        ? "Editor session expired — unlock again at /admin/letmeupload"
+        : msg || "Couldn't start the upload",
+    );
+  }
   const { error } = await supabase.storage
     .from("assets")
     .uploadToSignedUrl(path, uploadToken, body, contentType ? { contentType } : undefined);
-  if (error) throw error;
+  if (error) {
+    const msg = error.message || "Upload failed";
+    throw new Error(
+      /exceeded|too large|size/i.test(msg)
+        ? "File is too large for the vault"
+        : /network|failed to fetch/i.test(msg)
+          ? "Network dropped during upload — try again"
+          : msg,
+    );
+  }
 }
 
 export async function aRemoveFiles(paths: string[]) {
