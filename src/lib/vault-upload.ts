@@ -9,10 +9,80 @@ export interface UploadOverrides {
   fileType?: string;
 }
 
+export interface DroppedFile {
+  file: File;
+  relPath?: string;
+}
+
+/**
+ * Read a drop payload into files, walking directories when the browser exposes
+ * filesystem entries (plain `dataTransfer.files` returns unusable folder stubs).
+ */
+export async function filesFromDataTransfer(dt: DataTransfer): Promise<DroppedFile[]> {
+  const items = Array.from(dt.items ?? []).filter((it) => it.kind === "file");
+  const entries = items
+    .map((it) => (typeof it.webkitGetAsEntry === "function" ? it.webkitGetAsEntry() : null))
+    .filter(Boolean) as FileSystemEntry[];
+
+  if (entries.length === 0) {
+    return Array.from(dt.files ?? []).map((file) => ({ file }));
+  }
+
+  const out: DroppedFile[] = [];
+  const readFile = (entry: FileSystemFileEntry) =>
+    new Promise<File | null>((resolve) => entry.file(resolve, () => resolve(null)));
+  const readDir = (reader: FileSystemDirectoryReader) =>
+    new Promise<FileSystemEntry[]>((resolve) => reader.readEntries(resolve, () => resolve([])));
+
+  const walk = async (entry: FileSystemEntry, prefix: string): Promise<void> => {
+    if (entry.isFile) {
+      const file = await readFile(entry as FileSystemFileEntry);
+      if (file) out.push({ file, relPath: prefix ? `${prefix}/${file.name}` : undefined });
+      return;
+    }
+    const dirPrefix = prefix ? `${prefix}/${entry.name}` : entry.name;
+    const reader = (entry as FileSystemDirectoryEntry).createReader();
+    for (;;) {
+      const batch = await readDir(reader);
+      if (batch.length === 0) break;
+      for (const child of batch) await walk(child, dirPrefix);
+    }
+  };
+
+  for (const entry of entries) await walk(entry, "");
+  return out;
+}
+
+/** Runs tasks with limited concurrency so large imports finish faster. */
+export async function runPool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
+  let i = 0;
+  await Promise.all(
+    Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
+      while (i < items.length) {
+        const idx = i++;
+        await fn(items[idx]);
+      }
+    }),
+  );
+}
+
 export async function uploadOne(file: File, folderId: string | null, overrides: UploadOverrides = {}) {
   const displayName = overrides.name?.trim() || file.name;
-  const path = storagePath(folderId, displayName);
-  await aUploadFile(path, file, overrides.fileType?.trim() || file.type || undefined);
+  const contentType = overrides.fileType?.trim() || file.type || undefined;
+  let path = storagePath(folderId, displayName);
+  try {
+    await aUploadFile(path, file, contentType);
+  } catch (e) {
+    // One retry with a fresh key — signed upload URLs are short-lived and can
+    // collide or expire during large batches.
+    const retryPath = storagePath(folderId, displayName);
+    try {
+      await aUploadFile(retryPath, file, contentType);
+      path = retryPath;
+    } catch {
+      throw e;
+    }
+  }
   await aInsert("assets", [{
     name: displayName,
     storage_path: path,

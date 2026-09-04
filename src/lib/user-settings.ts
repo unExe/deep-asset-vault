@@ -62,6 +62,22 @@ export const DEFAULT_KEYBINDS: Record<ActionId, string> = {
   switchAdmin: "ctrl+shift+a",
 };
 
+/** Actions that only make sense in editor (admin) mode. */
+export const ADMIN_ACTIONS: ActionId[] = [
+  "copy",
+  "cut",
+  "paste",
+  "rename",
+  "delete",
+  "newFolder",
+  "upload",
+  "switchAdmin",
+];
+
+export function isAdminAction(id: ActionId): boolean {
+  return ADMIN_ACTIONS.includes(id);
+}
+
 export interface UserSettings {
   /** Ask before opening a link that leaves this site. */
   confirmExternalLinks: boolean;

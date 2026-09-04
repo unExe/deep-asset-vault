@@ -1,8 +1,14 @@
 import { CloudArrowUp } from "@phosphor-icons/react";
-import { useState, type DragEvent } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useRef, useState, type DragEvent } from "react";
+import { toast } from "sonner";
 import { useUploadStore } from "@/lib/upload-store";
-import { uploadOne } from "@/lib/vault-upload";
+import {
+  filesFromDataTransfer,
+  runPool,
+  uploadFromRelativePath,
+  uploadOne,
+  type DroppedFile,
+} from "@/lib/vault-upload";
 import { aInsert, aUploadFile } from "@/lib/admin-api";
 import { storagePath } from "@/lib/admin-api";
 
@@ -14,41 +20,77 @@ interface Props {
 
 export function UploadDropZone({ currentFolderId, onUploaded, children }: Props) {
   const [over, setOver] = useState(false);
+  const depth = useRef(0);
   const { add: addUpload, set: setUpload } = useUploadStore();
 
-  const runUploads = async (files: File[]) => {
+  // Stop the browser from replacing the page when a file lands outside the zone.
+  useEffect(() => {
+    const block = (e: Event) => e.preventDefault();
+    window.addEventListener("dragover", block);
+    window.addEventListener("drop", block);
+    return () => {
+      window.removeEventListener("dragover", block);
+      window.removeEventListener("drop", block);
+    };
+  }, []);
+
+  const runUploads = async (items: DroppedFile[]) => {
     let okCount = 0;
-    for (const file of files) {
+    let failed = 0;
+    await runPool(items, 4, async ({ file, relPath }) => {
       const id = crypto.randomUUID();
-      addUpload(id, file.name);
+      addUpload(id, relPath || file.name);
       setUpload(id, "uploading");
       try {
-        await uploadOne(file, currentFolderId);
+        if (relPath) await uploadFromRelativePath(file, relPath, currentFolderId);
+        else await uploadOne(file, currentFolderId);
         setUpload(id, "done");
         okCount++;
       } catch (e: unknown) {
+        failed++;
         setUpload(id, "error", e instanceof Error ? e.message : "Failed");
       }
+    });
+    if (okCount > 0) {
+      toast.success(`Uploaded ${okCount} item(s)${failed ? ` — ${failed} failed` : ""}`);
+      onUploaded();
+    } else if (failed > 0) {
+      toast.error("Upload failed");
     }
-    if (okCount > 0) onUploaded();
   };
 
   const handleDrop = async (e: DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    depth.current = 0;
     setOver(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) return;
-    void runUploads(files);
+    const items = await filesFromDataTransfer(e.dataTransfer);
+    if (items.length === 0) return;
+    void runUploads(items);
   };
+
+  const hasFiles = (e: DragEvent) =>
+    Array.from(e.dataTransfer?.types ?? []).includes("Files");
 
   return (
     <div
-      onDragOver={(e) => {
+      onDragEnter={(e) => {
+        if (!hasFiles(e)) return;
         e.preventDefault();
+        depth.current++;
         setOver(true);
       }}
-      onDragLeave={() => setOver(false)}
-      onDrop={handleDrop}
+      onDragOver={(e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setOver(true);
+      }}
+      onDragLeave={() => {
+        depth.current = Math.max(0, depth.current - 1);
+        if (depth.current === 0) setOver(false);
+      }}
+      onDrop={(e) => void handleDrop(e)}
       className="relative"
     >
       {children}
