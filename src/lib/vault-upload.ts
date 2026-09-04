@@ -68,16 +68,20 @@ export async function runPool<T>(items: T[], limit: number, fn: (item: T) => Pro
 
 export async function uploadOne(file: File, folderId: string | null, overrides: UploadOverrides = {}) {
   const displayName = overrides.name?.trim() || file.name;
-  const path = storagePath(folderId, displayName);
+  const contentType = overrides.fileType?.trim() || file.type || undefined;
+  let path = storagePath(folderId, displayName);
   try {
-    await aUploadFile(path, file, overrides.fileType?.trim() || file.type || undefined);
+    await aUploadFile(path, file, contentType);
   } catch (e) {
     // One retry with a fresh key — signed upload URLs are short-lived and can
     // collide or expire during large batches.
-    await aUploadFile(storagePath(folderId, displayName), file, overrides.fileType?.trim() || file.type || undefined)
-      .catch(() => {
-        throw e;
-      });
+    const retryPath = storagePath(folderId, displayName);
+    try {
+      await aUploadFile(retryPath, file, contentType);
+      path = retryPath;
+    } catch {
+      throw e;
+    }
   }
   await aInsert("assets", [{
     name: displayName,
