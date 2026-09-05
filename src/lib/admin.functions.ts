@@ -165,7 +165,7 @@ export const adminSetSetting = createServerFn({ method: 'POST' })
     z
       .object({
         token: tokenField,
-        key: z.enum(['hero', 'socials']),
+        key: z.enum(['hero', 'socials', 'branding']),
         value: z.unknown(),
       })
       .parse(d),
@@ -230,4 +230,19 @@ export const adminAnalytics = createServerFn({ method: 'POST' })
       topPaths: top(byPath),
       topReferrers: top(byReferrer),
     };
+  });
+
+export const adminListRequests = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => z.object({ token: tokenField }).parse(d))
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import('./admin.server');
+    await assertAdmin(data.token);
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data: rows, error } = await supabaseAdmin
+      .from('material_requests')
+      .select('id, title, details, contact, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [] };
   });
