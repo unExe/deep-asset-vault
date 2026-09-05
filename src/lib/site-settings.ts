@@ -59,6 +59,35 @@ export const ICON_OPTIONS = [
   "link",
 ] as const;
 
+export type BrandingSettings = {
+  siteTitle: string;
+  tagline: string;
+  description: string;
+  faviconUrl: string;
+  bannerUrl: string;
+  tooltip: string;
+  maintenance: boolean;
+};
+
+export const DEFAULT_BRANDING: BrandingSettings = {
+  siteTitle: "vault.unExe",
+  tagline: "creator hub & vault",
+  description: "unExe — videos, drops, and the editor vault.",
+  faviconUrl: "",
+  bannerUrl: "",
+  tooltip: "unExe — the editor vault",
+  maintenance: false,
+};
+
+export async function fetchBranding(): Promise<BrandingSettings> {
+  const { data } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "branding")
+    .maybeSingle();
+  return { ...DEFAULT_BRANDING, ...((data?.value as Partial<BrandingSettings>) ?? {}) };
+}
+
 export async function fetchSiteSettings(): Promise<{
   hero: HeroSettings;
   socials: SocialLink[];

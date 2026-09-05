@@ -12,6 +12,7 @@ import {
   adminChangePetAnswer,
   adminResetPasswordWithPet,
   adminSetSetting,
+  adminListRequests,
 } from "@/lib/admin.functions";
 
 const TOKEN_KEY = "vault_admin_token";
@@ -105,8 +106,13 @@ export async function aRemoveFiles(paths: string[]) {
   await adminRemoveFiles({ data: { token: requireToken(), paths } });
 }
 
-export async function aSetSetting(key: "hero" | "socials", value: unknown) {
+export async function aSetSetting(key: "hero" | "socials" | "branding", value: unknown) {
   await adminSetSetting({ data: { token: requireToken(), key, value } });
+}
+
+export async function aListRequests() {
+  const { rows } = await adminListRequests({ data: { token: requireToken() } });
+  return rows;
 }
 
 export async function aAnalytics(days = 30) {

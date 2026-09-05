@@ -10,6 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VaultRouteImport } from './routes/vault'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as MaintenanceRouteImport } from './routes/maintenance'
+import { Route as CookiesRouteImport } from './routes/cookies'
+import { Route as AccessDeniedRouteImport } from './routes/access-denied'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VaultFavoritesRouteImport } from './routes/vault.favorites'
 import { Route as AdminUnexeRouteImport } from './routes/admin.unexe'
@@ -18,6 +24,36 @@ import { Route as AdminLetmeuploadRouteImport } from './routes/admin.letmeupload
 const VaultRoute = VaultRouteImport.update({
   id: '/vault',
   path: '/vault',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaintenanceRoute = MaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccessDeniedRoute = AccessDeniedRouteImport.update({
+  id: '/access-denied',
+  path: '/access-denied',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -43,6 +79,12 @@ const AdminLetmeuploadRoute = AdminLetmeuploadRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/cookies': typeof CookiesRoute
+  '/maintenance': typeof MaintenanceRoute
+  '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
   '/admin/unexe': typeof AdminUnexeRoute
@@ -50,6 +92,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/cookies': typeof CookiesRoute
+  '/maintenance': typeof MaintenanceRoute
+  '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
   '/admin/unexe': typeof AdminUnexeRoute
@@ -58,6 +106,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/cookies': typeof CookiesRoute
+  '/maintenance': typeof MaintenanceRoute
+  '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
   '/admin/unexe': typeof AdminUnexeRoute
@@ -67,6 +121,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/access-denied'
+    | '/cookies'
+    | '/maintenance'
+    | '/privacy'
+    | '/support'
+    | '/terms'
     | '/vault'
     | '/admin/letmeupload'
     | '/admin/unexe'
@@ -74,6 +134,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/access-denied'
+    | '/cookies'
+    | '/maintenance'
+    | '/privacy'
+    | '/support'
+    | '/terms'
     | '/vault'
     | '/admin/letmeupload'
     | '/admin/unexe'
@@ -81,6 +147,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/access-denied'
+    | '/cookies'
+    | '/maintenance'
+    | '/privacy'
+    | '/support'
+    | '/terms'
     | '/vault'
     | '/admin/letmeupload'
     | '/admin/unexe'
@@ -89,6 +161,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccessDeniedRoute: typeof AccessDeniedRoute
+  CookiesRoute: typeof CookiesRoute
+  MaintenanceRoute: typeof MaintenanceRoute
+  PrivacyRoute: typeof PrivacyRoute
+  SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
   VaultRoute: typeof VaultRouteWithChildren
   AdminLetmeuploadRoute: typeof AdminLetmeuploadRoute
   AdminUnexeRoute: typeof AdminUnexeRoute
@@ -101,6 +179,48 @@ declare module '@tanstack/react-router' {
       path: '/vault'
       fullPath: '/vault'
       preLoaderRoute: typeof VaultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/maintenance': {
+      id: '/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof MaintenanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/access-denied': {
+      id: '/access-denied'
+      path: '/access-denied'
+      fullPath: '/access-denied'
+      preLoaderRoute: typeof AccessDeniedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -146,6 +266,12 @@ const VaultRouteWithChildren = VaultRoute._addFileChildren(VaultRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccessDeniedRoute: AccessDeniedRoute,
+  CookiesRoute: CookiesRoute,
+  MaintenanceRoute: MaintenanceRoute,
+  PrivacyRoute: PrivacyRoute,
+  SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
   VaultRoute: VaultRouteWithChildren,
   AdminLetmeuploadRoute: AdminLetmeuploadRoute,
   AdminUnexeRoute: AdminUnexeRoute,
