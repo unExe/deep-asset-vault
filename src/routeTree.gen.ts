@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VaultRouteImport } from './routes/vault'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MaintenanceRouteImport } from './routes/maintenance'
 import { Route as CookiesRouteImport } from './routes/cookies'
@@ -28,6 +29,11 @@ const VaultRoute = VaultRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/cookies': typeof CookiesRoute
   '/maintenance': typeof MaintenanceRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/maintenance': typeof MaintenanceRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/cookies': typeof CookiesRoute
   '/maintenance': typeof MaintenanceRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/vault': typeof VaultRouteWithChildren
   '/admin/letmeupload': typeof AdminLetmeuploadRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/maintenance'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/vault'
     | '/admin/letmeupload'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/maintenance'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/vault'
     | '/admin/letmeupload'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/maintenance'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/vault'
     | '/admin/letmeupload'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   CookiesRoute: typeof CookiesRoute
   MaintenanceRoute: typeof MaintenanceRoute
   PrivacyRoute: typeof PrivacyRoute
+  SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   VaultRoute: typeof VaultRouteWithChildren
   AdminLetmeuploadRoute: typeof AdminLetmeuploadRoute
@@ -173,6 +186,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -250,6 +270,7 @@ const rootRouteChildren: RootRouteChildren = {
   CookiesRoute: CookiesRoute,
   MaintenanceRoute: MaintenanceRoute,
   PrivacyRoute: PrivacyRoute,
+  SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   VaultRoute: VaultRouteWithChildren,
   AdminLetmeuploadRoute: AdminLetmeuploadRoute,
