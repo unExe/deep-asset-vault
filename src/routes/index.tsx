@@ -348,6 +348,10 @@ function HomePage() {
               </a>
             ))}
             <Link to="/vault" className="text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors">Vault</Link>
+            <Link to="/terms" className="text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors">Terms</Link>
+            <Link to="/privacy" className="text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors">Privacy</Link>
+            <Link to="/cookies" className="text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors">Cookies</Link>
+            <Link to="/support" className="text-[11px] font-mono uppercase text-vault-fg-muted hover:text-vault-fg transition-colors">Support</Link>
           </div>
         </footer>
       </main>
