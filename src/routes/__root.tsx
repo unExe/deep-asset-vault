@@ -3,6 +3,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/theme";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { ExternalLinkGuard } from "@/components/ExternalLinkGuard";
+import { BrandingApplier } from "@/components/site/BrandingApplier";
+import { ErrorScreen } from "@/components/site/ErrorScreen";
 
 
 import appCss from "../styles.css?url";
@@ -52,6 +54,7 @@ export const Route = createRootRoute({
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
+  errorComponent: ({ error }) => <ErrorScreen error={error as Error} />,
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
@@ -72,6 +75,7 @@ function RootComponent() {
   return (
     <ThemeProvider>
       <AnalyticsTracker />
+      <BrandingApplier />
       <ExternalLinkGuard />
       <Outlet />
       <Toaster />

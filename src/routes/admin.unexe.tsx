@@ -8,13 +8,19 @@ import {
   Image as ImageIcon,
   LinkSimple,
   Plus,
+  Megaphone,
+  Palette,
   ShieldCheck,
   Trash,
+  Tray,
   UploadSimple,
 } from "@phosphor-icons/react";
 import { AdminGate } from "@/components/admin/AdminGate";
 import { IconPicker, SocialIcon } from "@/lib/social-icons";
 import {
+  DEFAULT_BRANDING,
+  fetchBranding,
+  type BrandingSettings,
   DEFAULT_HERO,
   DEFAULT_SOCIALS,
   fetchSiteSettings,
@@ -27,8 +33,15 @@ import {
   aChangePetAnswer,
   aSetSetting,
   aUploadFile,
+  aListRequests,
   storagePath,
 } from "@/lib/admin-api";
+import {
+  addAnnouncement,
+  deleteAnnouncement,
+  fetchAnnouncements,
+  type Announcement,
+} from "@/lib/announcements";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/unexe")({
@@ -46,11 +59,14 @@ export const Route = createFileRoute("/admin/unexe")({
   ),
 });
 
-type Tab = "hero" | "links" | "analytics" | "security";
+type Tab = "hero" | "links" | "branding" | "announcements" | "messages" | "analytics" | "security";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "hero", label: "Hero & profile", icon: <ImageIcon size={15} /> },
   { id: "links", label: "Social links", icon: <LinkSimple size={15} /> },
+  { id: "branding", label: "Branding", icon: <Palette size={15} /> },
+  { id: "announcements", label: "Announcements", icon: <Megaphone size={15} /> },
+  { id: "messages", label: "Messages", icon: <Tray size={15} /> },
   { id: "analytics", label: "Analytics", icon: <ChartLine size={15} /> },
   { id: "security", label: "Security", icon: <ShieldCheck size={15} /> },
 ];
@@ -116,6 +132,9 @@ function AdminPanel() {
           <>
             {tab === "hero" && <HeroEditor hero={hero} setHero={setHero} />}
             {tab === "links" && <LinksEditor socials={socials} setSocials={setSocials} />}
+            {tab === "branding" && <BrandingEditor />}
+            {tab === "announcements" && <AnnouncementsEditor />}
+            {tab === "messages" && <MessagesPanel />}
             {tab === "analytics" && <AnalyticsPanel />}
             {tab === "security" && <SecurityPanel />}
           </>
@@ -521,6 +540,329 @@ function SecurityPanel() {
           Update answer
         </button>
       </section>
+    </div>
+  );
+}
+
+/* -------------------------------- Branding -------------------------------- */
+
+function BrandingEditor() {
+  const [b, setB] = useState<BrandingSettings>(DEFAULT_BRANDING);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState<"favicon" | "banner" | null>(null);
+
+  useEffect(() => {
+    void fetchBranding().then((v) => {
+      setB(v);
+      setLoading(false);
+    });
+  }, []);
+
+  const upload = async (kind: "favicon" | "banner", file: File) => {
+    setBusy(kind);
+    try {
+      const path = storagePath("branding", file.name);
+      await aUploadFile(path, file, file.type);
+      const url = supabase.storage.from("assets").getPublicUrl(path).data.publicUrl;
+      const next = kind === "favicon" ? { ...b, faviconUrl: url } : { ...b, bannerUrl: url };
+      setB(next);
+      await aSetSetting("branding", next);
+      toast.success("Image updated");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await aSetSetting("branding", b);
+      toast.success("Branding saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <p className="text-sm text-vault-fg-muted">Loading…</p>;
+
+  return (
+    <div className="space-y-6">
+      <section className={cardCls + " space-y-4"}>
+        <h2 className="text-sm font-semibold">Site identity</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Site title (browser tab & link title)">
+            <input value={b.siteTitle} onChange={(e) => setB({ ...b, siteTitle: e.target.value })} className={inputCls} />
+          </Field>
+          <Field label="Tagline">
+            <input value={b.tagline} onChange={(e) => setB({ ...b, tagline: e.target.value })} className={inputCls} />
+          </Field>
+        </div>
+        <Field label="Link description (shown when the site is shared)">
+          <textarea
+            value={b.description}
+            onChange={(e) => setB({ ...b, description: e.target.value })}
+            rows={3}
+            className={inputCls}
+          />
+        </Field>
+        <Field label="Tooltip">
+          <input value={b.tooltip} onChange={(e) => setB({ ...b, tooltip: e.target.value })} className={inputCls} />
+        </Field>
+      </section>
+
+      <section className={cardCls + " space-y-5"}>
+        <h2 className="text-sm font-semibold">Favicon & link banner</h2>
+        <div className="grid sm:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <p className="text-xs text-vault-fg-muted">Favicon (square, 512px works well)</p>
+            <div className="w-12 h-12 rounded-lg overflow-hidden border border-vault-hairline bg-vault-overlay-strong grid place-items-center">
+              {b.faviconUrl ? (
+                <img src={b.faviconUrl} alt="Favicon" className="w-full h-full object-cover" />
+              ) : (
+                <ImageIcon size={16} className="text-vault-fg-muted" />
+              )}
+            </div>
+            <label className={ghostBtnCls + " cursor-pointer"}>
+              <UploadSimple size={14} /> {busy === "favicon" ? "Uploading…" : "Upload favicon"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void upload("favicon", f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <input
+              value={b.faviconUrl}
+              onChange={(e) => setB({ ...b, faviconUrl: e.target.value })}
+              placeholder="…or paste a URL"
+              className={inputCls}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs text-vault-fg-muted">Link banner (1200×630 recommended)</p>
+            <div className="aspect-[1200/630] w-full max-w-xs rounded-lg overflow-hidden border border-vault-hairline bg-vault-overlay-strong grid place-items-center">
+              {b.bannerUrl ? (
+                <img src={b.bannerUrl} alt="Link banner" className="w-full h-full object-cover" />
+              ) : (
+                <ImageIcon size={20} className="text-vault-fg-muted" />
+              )}
+            </div>
+            <label className={ghostBtnCls + " cursor-pointer"}>
+              <UploadSimple size={14} /> {busy === "banner" ? "Uploading…" : "Upload banner"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void upload("banner", f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <input
+              value={b.bannerUrl}
+              onChange={(e) => setB({ ...b, bannerUrl: e.target.value })}
+              placeholder="…or paste a URL"
+              className={inputCls}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className={cardCls + " space-y-3"}>
+        <h2 className="text-sm font-semibold">Maintenance mode</h2>
+        <p className="text-xs text-vault-fg-muted">
+          Visitors see the maintenance page. You keep full access while unlocked here.
+        </p>
+        <label className="inline-flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={b.maintenance}
+            onChange={(e) => setB({ ...b, maintenance: e.target.checked })}
+          />
+          Put the site in maintenance mode
+        </label>
+      </section>
+
+      <button onClick={() => void save()} disabled={saving} className={btnCls}>
+        <FloppyDisk size={15} /> {saving ? "Saving…" : "Save branding"}
+      </button>
+    </div>
+  );
+}
+
+/* ----------------------------- Announcements ------------------------------ */
+
+function AnnouncementsEditor() {
+  const [items, setItems] = useState<Announcement[]>([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [banner, setBanner] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const reload = () => void fetchAnnouncements(50).then(setItems);
+  useEffect(reload, []);
+
+  const uploadBanner = async (file: File) => {
+    setUploading(true);
+    try {
+      const path = storagePath("announcements", file.name);
+      await aUploadFile(path, file, file.type);
+      setBanner(supabase.storage.from("assets").getPublicUrl(path).data.publicUrl);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const publish = async () => {
+    if (!title.trim()) return;
+    setBusy(true);
+    try {
+      await addAnnouncement({ title: title.trim(), description, banner_url: banner });
+      setTitle("");
+      setDescription("");
+      setBanner("");
+      reload();
+      toast.success("Announcement published");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (id: string) => {
+    try {
+      await deleteAnnouncement(id);
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <section className={cardCls + " space-y-4"}>
+        <h2 className="text-sm font-semibold">New announcement</h2>
+        <Field label="Title">
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="Short description">
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            className={inputCls}
+          />
+        </Field>
+        <div className="space-y-2">
+          <span className="text-xs text-vault-fg-muted">Banner image (optional)</span>
+          {banner && (
+            <img src={banner} alt="Banner preview" className="w-full max-w-sm rounded-lg border border-vault-hairline" />
+          )}
+          <div className="flex flex-wrap gap-2 items-center">
+            <label className={ghostBtnCls + " cursor-pointer"}>
+              <UploadSimple size={14} /> {uploading ? "Uploading…" : "Upload banner"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void uploadBanner(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <input
+              value={banner}
+              onChange={(e) => setBanner(e.target.value)}
+              placeholder="…or paste an image URL"
+              className={inputCls + " flex-1 min-w-[220px]"}
+            />
+          </div>
+        </div>
+        <button onClick={() => void publish()} disabled={busy || !title.trim()} className={btnCls}>
+          <Plus size={15} /> {busy ? "Publishing…" : "Publish announcement"}
+        </button>
+      </section>
+
+      <section className={cardCls + " space-y-3"}>
+        <h2 className="text-sm font-semibold">Published ({items.length})</h2>
+        {items.length === 0 && <p className="text-sm text-vault-fg-muted">Nothing published yet.</p>}
+        {items.map((a) => (
+          <div key={a.id} className="flex gap-3 items-start border border-vault-hairline rounded-lg p-3">
+            {a.banner_url && (
+              <img src={a.banner_url} alt="" className="w-20 h-14 object-cover rounded-md border border-vault-hairline" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium truncate">{a.title}</p>
+              {a.description && <p className="text-xs text-vault-fg-muted line-clamp-2">{a.description}</p>}
+              <p className="text-[11px] text-vault-fg-muted/70 mt-1">
+                {new Date(a.created_at).toLocaleString()}
+              </p>
+            </div>
+            <button
+              onClick={() => void remove(a.id)}
+              className="p-2 rounded-md text-red-400 hover:bg-red-500/10"
+              aria-label="Delete announcement"
+            >
+              <Trash size={16} />
+            </button>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+/* -------------------------------- Messages -------------------------------- */
+
+type RequestRow = Awaited<ReturnType<typeof aListRequests>>[number];
+
+function MessagesPanel() {
+  const [rows, setRows] = useState<RequestRow[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    void aListRequests()
+      .then(setRows)
+      .catch((e) => setErr(e instanceof Error ? e.message : "Failed to load"));
+  }, []);
+
+  if (err) return <p className="text-sm text-red-400">{err}</p>;
+  if (!rows) return <p className="text-sm text-vault-fg-muted">Loading messages…</p>;
+  if (rows.length === 0)
+    return <p className="text-sm text-vault-fg-muted">No requests or messages yet.</p>;
+
+  return (
+    <div className="space-y-3">
+      {rows.map((r) => (
+        <section key={r.id} className={cardCls + " space-y-1"}>
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm font-medium">{r.title}</p>
+            <span className="text-[11px] text-vault-fg-muted/70 whitespace-nowrap">
+              {new Date(r.created_at).toLocaleString()}
+            </span>
+          </div>
+          {r.details && <p className="text-sm text-vault-fg-muted whitespace-pre-wrap">{r.details}</p>}
+          {r.contact && <p className="text-xs text-vault-fg-muted">Contact: {r.contact}</p>}
+        </section>
+      ))}
     </div>
   );
 }
