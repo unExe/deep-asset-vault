@@ -164,6 +164,17 @@ function SupportPage() {
       </Section>
 
       <Section heading="Other ways">
+        {content.supportEmail.trim() && (
+          <p>
+            Email:{" "}
+            <a
+              href={`mailto:${content.supportEmail.trim()}`}
+              className="text-vault-fg underline underline-offset-4"
+            >
+              {content.supportEmail.trim()}
+            </a>
+          </p>
+        )}
         <p>
           You can also reach unExe through the channels linked on the{" "}
           <Link to="/" className="text-vault-fg underline underline-offset-4">
