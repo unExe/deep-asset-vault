@@ -23,6 +23,8 @@ import {
   DEFAULT_HERO,
   DEFAULT_SOCIALS,
   fetchSiteSettings,
+  fetchContent,
+  type FaqItem,
   type HeroSettings,
   type SocialLink,
 } from "@/lib/site-settings";
