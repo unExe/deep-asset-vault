@@ -124,11 +124,6 @@ export function VaultSidebar({
           />
         </div>
 
-        {/* Announcements — desktop sidebar only; mobile uses the bell modal */}
-        <div className="hidden md:block">
-          <AnnouncementsCard items={announcements} onOpenAll={() => setNotifOpen(true)} />
-        </div>
-
         {/* Pinned folders */}
         <div>
           <div className="px-2 text-[10px] uppercase tracking-wider text-vault-fg-muted mb-1">
