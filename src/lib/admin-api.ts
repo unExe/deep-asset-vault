@@ -106,7 +106,10 @@ export async function aRemoveFiles(paths: string[]) {
   await adminRemoveFiles({ data: { token: requireToken(), paths } });
 }
 
-export async function aSetSetting(key: "hero" | "socials" | "branding", value: unknown) {
+export async function aSetSetting(
+  key: "hero" | "socials" | "branding" | "content",
+  value: unknown,
+) {
   await adminSetSetting({ data: { token: requireToken(), key, value } });
 }
 

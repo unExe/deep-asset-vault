@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { DEFAULT_CONTENT, fetchContent, type ContentSettings } from "@/lib/site-settings";
 import { toast } from "sonner";
 import { LifebuoyIcon } from "@phosphor-icons/react";
 import { PageShell, Section } from "@/components/site/PageShell";
@@ -41,8 +42,8 @@ const FAQ = [
     a: "Favourites are stored in your browser. Clearing site data, using private browsing, or switching device or browser resets them.",
   },
   {
-    q: "Uploads say my session expired.",
-    a: "The editor unlock lasts for one browser session. Unlock again from the admin entrance and retry the upload.",
+    q: "Can I request an asset that isn't here?",
+    a: "Yes — use the form below or the Request Material button in the vault sidebar. Describe what you need and leave a way to reach you.",
   },
 ];
 
@@ -52,6 +53,11 @@ function SupportPage() {
   const [contact, setContact] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [content, setContent] = useState<ContentSettings>(DEFAULT_CONTENT);
+
+  useEffect(() => {
+    void fetchContent().then(setContent);
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +87,10 @@ function SupportPage() {
   return (
     <PageShell
       title="Support"
-      intro="Something broken, missing, or confusing? Send it over — every message lands in the admin inbox."
+      intro={
+        content.supportIntro.trim() ||
+        "Something broken, missing, or confusing? Send it over — every message is read."
+      }
     >
       <Section heading="Common questions">
         <div className="space-y-3">
@@ -155,6 +164,17 @@ function SupportPage() {
       </Section>
 
       <Section heading="Other ways">
+        {content.supportEmail.trim() && (
+          <p>
+            Email:{" "}
+            <a
+              href={`mailto:${content.supportEmail.trim()}`}
+              className="text-vault-fg underline underline-offset-4"
+            >
+              {content.supportEmail.trim()}
+            </a>
+          </p>
+        )}
         <p>
           You can also reach unExe through the channels linked on the{" "}
           <Link to="/" className="text-vault-fg underline underline-offset-4">

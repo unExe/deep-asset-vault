@@ -49,6 +49,29 @@ export function Section({ heading, children }: { heading: string; children: Reac
   );
 }
 
+/**
+ * Renders admin-authored text. Lines starting with "## " become headings,
+ * blank lines separate paragraphs.
+ */
+export function RichText({ text }: { text: string }) {
+  const blocks = text.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  return (
+    <>
+      {blocks.map((b, i) =>
+        b.startsWith("## ") ? (
+          <h2 key={i} className="text-base font-semibold text-vault-fg pt-2">
+            {b.slice(3)}
+          </h2>
+        ) : (
+          <p key={i} className="whitespace-pre-line">
+            {b}
+          </p>
+        ),
+      )}
+    </>
+  );
+}
+
 export function SiteFooter() {
   const links = [
     { to: "/terms", label: "Terms" },

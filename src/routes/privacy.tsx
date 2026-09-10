@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PageShell, Section } from "@/components/site/PageShell";
+import { useEffect, useState } from "react";
+import { PageShell, RichText, Section } from "@/components/site/PageShell";
+import { fetchContent } from "@/lib/site-settings";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -24,6 +26,22 @@ export const Route = createFileRoute("/privacy")({
 });
 
 function PrivacyPage() {
+  const [custom, setCustom] = useState<string | null>(null);
+  useEffect(() => {
+    void fetchContent().then((c) => setCustom(c.privacy.trim() || null));
+  }, []);
+
+  if (custom) {
+    return (
+      <PageShell
+        title="Privacy Policy"
+        intro="Short version: no accounts, no ad trackers, and only the minimum needed to keep the vault running."
+      >
+        <RichText text={custom} />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
       title="Privacy Policy"

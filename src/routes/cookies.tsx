@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { PageShell, Section } from "@/components/site/PageShell";
+import { PageShell, RichText, Section } from "@/components/site/PageShell";
+import { fetchContent } from "@/lib/site-settings";
 
 export const Route = createFileRoute("/cookies")({
   head: () => ({
@@ -42,7 +43,12 @@ export function readCookiePrefs(): CookiePrefs {
 function CookiesPage() {
   const [prefs, setPrefs] = useState<CookiePrefs>(DEFAULTS);
 
+  const [note, setNote] = useState("");
+
   useEffect(() => setPrefs(readCookiePrefs()), []);
+  useEffect(() => {
+    void fetchContent().then((c) => setNote(c.cookies.trim()));
+  }, []);
 
   const update = (patch: Partial<CookiePrefs>) => {
     const next = { ...prefs, ...patch };
@@ -71,7 +77,7 @@ function CookiesPage() {
       <Section heading="Strictly necessary">
         <Row
           label="Essential"
-          desc="Keeps the admin unlock session and basic site function working. Cannot be disabled."
+          desc="Keeps basic site function working. Cannot be disabled."
           checked
           disabled
         />
@@ -102,6 +108,11 @@ function CookiesPage() {
           Clear stored data
         </button>
       </Section>
+      {note && (
+        <Section heading="More about cookies here">
+          <RichText text={note} />
+        </Section>
+      )}
     </PageShell>
   );
 }

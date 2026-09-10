@@ -23,6 +23,8 @@ import {
   DEFAULT_HERO,
   DEFAULT_SOCIALS,
   fetchSiteSettings,
+  fetchContent,
+  type FaqItem,
   type HeroSettings,
   type SocialLink,
 } from "@/lib/site-settings";
@@ -102,12 +104,14 @@ function HomePage() {
   const reduce = useReducedMotion();
   const [hero, setHero] = useState<HeroSettings>(DEFAULT_HERO);
   const [socials, setSocials] = useState<SocialLink[]>(DEFAULT_SOCIALS);
+  const [faq, setFaq] = useState<FaqItem[]>([]);
 
   useEffect(() => {
     void fetchSiteSettings().then((s) => {
       setHero(s.hero);
       setSocials(s.socials);
     });
+    void fetchContent().then((c) => setFaq(c.faq.filter((f) => f.q.trim())));
   }, []);
 
   const heroRef = useRef<HTMLElement | null>(null);
@@ -308,6 +312,32 @@ function HomePage() {
             </div>
           </Reveal>
         </section>
+
+        {/* FAQ */}
+        {faq.length > 0 && (
+          <section className="max-w-3xl mx-auto px-6 py-16 sm:py-20">
+            <Reveal>
+              <h2 className="text-2xl sm:text-3xl font-bold text-vault-fg tracking-tight mb-6">
+                Frequently asked
+              </h2>
+              <div className="space-y-3">
+                {faq.map((f) => (
+                  <details
+                    key={f.id}
+                    className="rounded-xl border border-vault-hairline bg-vault-overlay p-4"
+                  >
+                    <summary className="cursor-pointer text-sm font-medium text-vault-fg select-none">
+                      {f.q}
+                    </summary>
+                    <p className="mt-2 text-sm leading-relaxed text-vault-fg-muted whitespace-pre-line">
+                      {f.a}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </Reveal>
+          </section>
+        )}
 
         {/* CTA */}
         <section className="max-w-4xl mx-auto px-6 py-20 sm:py-24 text-center">

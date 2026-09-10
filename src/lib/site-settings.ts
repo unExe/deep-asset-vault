@@ -88,6 +88,40 @@ export async function fetchBranding(): Promise<BrandingSettings> {
   return { ...DEFAULT_BRANDING, ...((data?.value as Partial<BrandingSettings>) ?? {}) };
 }
 
+export type FaqItem = { id: string; q: string; a: string };
+
+export type ContentSettings = {
+  faq: FaqItem[];
+  terms: string;
+  privacy: string;
+  cookies: string;
+  supportIntro: string;
+  /** Shown publicly on the support page. Leave empty to hide. */
+  supportEmail: string;
+  /** Private — never rendered. Where request notifications should go. */
+  notifyEmail: string;
+};
+
+export const DEFAULT_CONTENT: ContentSettings = {
+  faq: [],
+  terms: "",
+  privacy: "",
+  cookies: "",
+  supportIntro: "",
+  supportEmail: "",
+  notifyEmail: "",
+};
+
+export async function fetchContent(): Promise<ContentSettings> {
+  const { data } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "content")
+    .maybeSingle();
+  const v = (data?.value as Partial<ContentSettings>) ?? {};
+  return { ...DEFAULT_CONTENT, ...v, faq: Array.isArray(v.faq) ? v.faq : [] };
+}
+
 export async function fetchSiteSettings(): Promise<{
   hero: HeroSettings;
   socials: SocialLink[];
