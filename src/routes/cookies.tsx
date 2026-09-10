@@ -43,7 +43,12 @@ export function readCookiePrefs(): CookiePrefs {
 function CookiesPage() {
   const [prefs, setPrefs] = useState<CookiePrefs>(DEFAULTS);
 
+  const [note, setNote] = useState("");
+
   useEffect(() => setPrefs(readCookiePrefs()), []);
+  useEffect(() => {
+    void fetchContent().then((c) => setNote(c.cookies.trim()));
+  }, []);
 
   const update = (patch: Partial<CookiePrefs>) => {
     const next = { ...prefs, ...patch };
