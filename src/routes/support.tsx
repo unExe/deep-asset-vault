@@ -41,8 +41,8 @@ const FAQ = [
     a: "Favourites are stored in your browser. Clearing site data, using private browsing, or switching device or browser resets them.",
   },
   {
-    q: "Uploads say my session expired.",
-    a: "The editor unlock lasts for one browser session. Unlock again from the admin entrance and retry the upload.",
+    q: "Can I request an asset that isn't here?",
+    a: "Yes — use the form below or the Request Material button in the vault sidebar. Describe what you need and leave a way to reach you.",
   },
 ];
 
