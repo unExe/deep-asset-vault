@@ -165,7 +165,7 @@ export const adminSetSetting = createServerFn({ method: 'POST' })
     z
       .object({
         token: tokenField,
-        key: z.enum(['hero', 'socials', 'branding']),
+        key: z.enum(['hero', 'socials', 'branding', 'content']),
         value: z.unknown(),
       })
       .parse(d),
