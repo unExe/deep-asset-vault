@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { DEFAULT_CONTENT, fetchContent, type ContentSettings } from "@/lib/site-settings";
 import { toast } from "sonner";
 import { LifebuoyIcon } from "@phosphor-icons/react";
 import { PageShell, Section } from "@/components/site/PageShell";
@@ -52,6 +53,11 @@ function SupportPage() {
   const [contact, setContact] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [content, setContent] = useState<ContentSettings>(DEFAULT_CONTENT);
+
+  useEffect(() => {
+    void fetchContent().then(setContent);
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
