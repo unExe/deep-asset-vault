@@ -87,7 +87,10 @@ function SupportPage() {
   return (
     <PageShell
       title="Support"
-      intro="Something broken, missing, or confusing? Send it over — every message lands in the admin inbox."
+      intro={
+        content.supportIntro.trim() ||
+        "Something broken, missing, or confusing? Send it over — every message is read."
+      }
     >
       <Section heading="Common questions">
         <div className="space-y-3">
