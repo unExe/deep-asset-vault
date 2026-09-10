@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageShell, Section } from "@/components/site/PageShell";
+import { useEffect, useState } from "react";
+import { PageShell, RichText, Section } from "@/components/site/PageShell";
+import { fetchContent } from "@/lib/site-settings";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -24,6 +26,22 @@ export const Route = createFileRoute("/terms")({
 });
 
 function TermsPage() {
+  const [custom, setCustom] = useState<string | null>(null);
+  useEffect(() => {
+    void fetchContent().then((c) => setCustom(c.terms.trim() || null));
+  }, []);
+
+  if (custom) {
+    return (
+      <PageShell
+        title="Terms & Conditions"
+        intro="By browsing, previewing or downloading anything from vault.unExe you agree to the terms below."
+      >
+        <RichText text={custom} />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
       title="Terms & Conditions"
