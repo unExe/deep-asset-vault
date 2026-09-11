@@ -100,7 +100,7 @@ export function VaultSidebar({
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-4">
         {/* Basic */}
         <div>
           <div className="px-2 text-[10px] uppercase tracking-wider text-vault-fg-muted mb-1">Basic</div>
@@ -150,7 +150,24 @@ export function VaultSidebar({
         </div>
       </nav>
 
-      <div className="border-t border-vault-hairline p-2">
+      <div className="shrink-0 px-2 pb-2 space-y-2">
+        {announcements.length > 0 && (
+          <AnnouncementsCard items={announcements} onOpenAll={() => setNotifOpen(true)} />
+        )}
+        <button
+          onClick={() => setNotifOpen(true)}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-vault-fg/85 hover:bg-vault-overlay transition-colors"
+        >
+          <span className="relative w-4 flex justify-center shrink-0">
+            <Bell size={15} />
+            {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-vault-accent" />}
+          </span>
+          <span>Announcements</span>
+          {unread > 0 && <span className="ml-auto text-[10px] text-vault-fg-muted">{unread} new</span>}
+        </button>
+      </div>
+
+      <div className="shrink-0 border-t border-vault-hairline p-2">
         <FileTypeChart />
       </div>
     </div>
