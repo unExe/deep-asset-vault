@@ -9,6 +9,7 @@ import {
   LinkSimple,
   Plus,
   Megaphone,
+  NotePencil,
   Palette,
   ShieldCheck,
   Trash,
@@ -24,6 +25,9 @@ import {
   DEFAULT_HERO,
   DEFAULT_SOCIALS,
   fetchSiteSettings,
+  DEFAULT_CONTENT,
+  fetchContent,
+  type ContentSettings,
   type HeroSettings,
   type SocialLink,
 } from "@/lib/site-settings";
@@ -59,12 +63,13 @@ export const Route = createFileRoute("/admin/unexe")({
   ),
 });
 
-type Tab = "hero" | "links" | "branding" | "announcements" | "messages" | "analytics" | "security";
+type Tab = "hero" | "links" | "branding" | "content" | "announcements" | "messages" | "analytics" | "security";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "hero", label: "Hero & profile", icon: <ImageIcon size={15} /> },
   { id: "links", label: "Social links", icon: <LinkSimple size={15} /> },
   { id: "branding", label: "Branding", icon: <Palette size={15} /> },
+  { id: "content", label: "Content & support", icon: <NotePencil size={15} /> },
   { id: "announcements", label: "Announcements", icon: <Megaphone size={15} /> },
   { id: "messages", label: "Messages", icon: <Tray size={15} /> },
   { id: "analytics", label: "Analytics", icon: <ChartLine size={15} /> },
@@ -103,8 +108,8 @@ function AdminPanel() {
             </Link>
             <h1 className="text-sm font-semibold truncate">Admin · vault.unExe</h1>
           </div>
-          <Link to="/admin/letmeupload" className={ghostBtnCls}>
-            Vault editor
+          <Link to="/vault" className={ghostBtnCls}>
+            Open vault
           </Link>
         </div>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto no-scrollbar">
@@ -133,6 +138,7 @@ function AdminPanel() {
             {tab === "hero" && <HeroEditor hero={hero} setHero={setHero} />}
             {tab === "links" && <LinksEditor socials={socials} setSocials={setSocials} />}
             {tab === "branding" && <BrandingEditor />}
+            {tab === "content" && <ContentEditor />}
             {tab === "announcements" && <AnnouncementsEditor />}
             {tab === "messages" && <MessagesPanel />}
             {tab === "analytics" && <AnalyticsPanel />}
@@ -140,6 +146,139 @@ function AdminPanel() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+/* --------------------------- Content & support ---------------------------- */
+
+function ContentEditor() {
+  const [content, setContent] = useState<ContentSettings>(DEFAULT_CONTENT);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    void fetchContent().then((value) => {
+      setContent(value);
+      setLoading(false);
+    });
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await aSetSetting("content", content);
+      toast.success("Content and support settings saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addFaq = () => {
+    setContent((current) => ({
+      ...current,
+      faq: [...current.faq, { id: crypto.randomUUID(), q: "", a: "" }],
+    }));
+  };
+
+  const updateFaq = (id: string, patch: { q?: string; a?: string }) => {
+    setContent((current) => ({
+      ...current,
+      faq: current.faq.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    }));
+  };
+
+  if (loading) return <p className="text-sm text-vault-fg-muted">Loading…</p>;
+
+  return (
+    <div className="space-y-6">
+      <section className={cardCls + " space-y-4"}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">Homepage FAQs</h2>
+            <p className="mt-1 text-xs text-vault-fg-muted">Only questions with a title are shown.</p>
+          </div>
+          <button onClick={addFaq} className={ghostBtnCls}>
+            <Plus size={14} /> Add FAQ
+          </button>
+        </div>
+        {content.faq.length === 0 && (
+          <p className="rounded-md border border-dashed border-vault-hairline p-4 text-xs text-vault-fg-muted">
+            No FAQs yet.
+          </p>
+        )}
+        {content.faq.map((item, index) => (
+          <div key={item.id} className="rounded-lg border border-vault-hairline p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-medium">Question {index + 1}</span>
+              <button
+                onClick={() => setContent((current) => ({ ...current, faq: current.faq.filter((faq) => faq.id !== item.id) }))}
+                className="p-1.5 rounded-md text-vault-danger hover:bg-vault-overlay-strong"
+                aria-label={`Delete question ${index + 1}`}
+              >
+                <Trash size={15} />
+              </button>
+            </div>
+            <input
+              value={item.q}
+              onChange={(e) => updateFaq(item.id, { q: e.target.value })}
+              placeholder="Question"
+              maxLength={200}
+              className={inputCls}
+            />
+            <textarea
+              value={item.a}
+              onChange={(e) => updateFaq(item.id, { a: e.target.value })}
+              placeholder="Answer"
+              rows={3}
+              maxLength={2000}
+              className={inputCls}
+            />
+          </div>
+        ))}
+      </section>
+
+      <section className={cardCls + " space-y-4"}>
+        <div>
+          <h2 className="text-sm font-semibold">Legal pages</h2>
+          <p className="mt-1 text-xs text-vault-fg-muted">
+            Leave a field empty to keep the built-in page. Start a paragraph with ## to create a heading.
+          </p>
+        </div>
+        <Field label="Terms & Conditions">
+          <textarea value={content.terms} onChange={(e) => setContent({ ...content, terms: e.target.value })} rows={10} className={inputCls} />
+        </Field>
+        <Field label="Privacy Policy">
+          <textarea value={content.privacy} onChange={(e) => setContent({ ...content, privacy: e.target.value })} rows={10} className={inputCls} />
+        </Field>
+        <Field label="Cookies information">
+          <textarea value={content.cookies} onChange={(e) => setContent({ ...content, cookies: e.target.value })} rows={6} className={inputCls} />
+        </Field>
+      </section>
+
+      <section className={cardCls + " space-y-4"}>
+        <h2 className="text-sm font-semibold">Support</h2>
+        <Field label="Support page introduction">
+          <textarea value={content.supportIntro} onChange={(e) => setContent({ ...content, supportIntro: e.target.value })} rows={3} className={inputCls} />
+        </Field>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Public support email">
+            <input type="email" value={content.supportEmail} onChange={(e) => setContent({ ...content, supportEmail: e.target.value })} placeholder="Shown on the Support page" className={inputCls} />
+          </Field>
+          <Field label="Private notification email">
+            <input type="email" value={content.notifyEmail} onChange={(e) => setContent({ ...content, notifyEmail: e.target.value })} placeholder="Never shown publicly" className={inputCls} />
+          </Field>
+        </div>
+        <p className="text-xs text-vault-fg-muted">
+          Requests are always saved in Messages. Email delivery activates when an email service is connected.
+        </p>
+      </section>
+
+      <button onClick={() => void save()} disabled={saving} className={btnCls}>
+        <FloppyDisk size={15} /> {saving ? "Saving…" : "Save content"}
+      </button>
     </div>
   );
 }

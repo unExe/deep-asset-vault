@@ -51,12 +51,13 @@ import {
   Upload,
   MagnifyingGlass,
   Gear,
-  SlidersHorizontal,
+  Bell,
   List,
   X as XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { aDelete, aInsert, aRemoveFiles } from "@/lib/admin-api";
+import { useAnnouncements } from "@/lib/announcements";
 
 interface CtxState {
   x: number;
@@ -91,6 +92,7 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [settings] = useUserSettings();
+  const { unread: unreadAnnouncements } = useAnnouncements();
 
   // Desktop (>=1024px) expanded, tablet (768-1023px) collapsed.
   useEffect(() => {
@@ -641,6 +643,16 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
                     <MagnifyingGlass size={15} />
                   </button>
                   <button
+                    onClick={() => window.dispatchEvent(new Event("vault:open-notifications"))}
+                    className="md:hidden relative shrink-0 p-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg"
+                    aria-label="Announcements"
+                  >
+                    <Bell size={15} />
+                    {unreadAnnouncements > 0 && (
+                      <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-vault-accent" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => setSettingsOpen(true)}
                     className="shrink-0 p-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg hover:bg-vault-overlay-strong"
                     aria-label="Settings"
@@ -649,15 +661,6 @@ export function AssetVaultApp({ isEditorMode }: { isEditorMode: boolean }) {
                     <Gear size={15} />
                   </button>
                   <ThemeToggle />
-                  {isEditorMode && (
-                    <a
-                      href="/admin/unexe"
-                      className="shrink-0 hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-vault-hairline bg-vault-overlay text-vault-fg text-xs hover:bg-vault-overlay-strong"
-                      title="Switch to the site admin panel"
-                    >
-                      <SlidersHorizontal size={14} /> Admin
-                    </a>
-                  )}
                   {isEditorMode && (
                     <button
                       onClick={() => setUploadOpen(true)}
