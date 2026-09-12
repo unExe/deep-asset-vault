@@ -11,7 +11,7 @@ interface Comment {
   folder_id: string | null;
   parent_id: string | null;
   name: string;
-  email: string | null;
+  
   body: string;
   created_at: string;
 }
@@ -28,7 +28,10 @@ function useComments(folderId: string | null) {
   const [comments, setComments] = useState<Comment[]>([]);
 
   const refresh = useCallback(async () => {
-    const q = supabase.from("folder_comments").select("*").order("created_at", { ascending: false });
+    const q = supabase
+      .from("folder_comments")
+      .select("id, folder_id, parent_id, name, body, created_at")
+      .order("created_at", { ascending: false });
     const res = folderId === null ? await q.is("folder_id", null) : await q.eq("folder_id", folderId);
     setComments((res.data as Comment[] | null) ?? []);
   }, [folderId]);
