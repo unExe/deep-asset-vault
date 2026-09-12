@@ -11,7 +11,7 @@ interface Comment {
   folder_id: string | null;
   parent_id: string | null;
   name: string;
-  email: string | null;
+  
   body: string;
   created_at: string;
 }
